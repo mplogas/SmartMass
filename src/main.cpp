@@ -4,6 +4,7 @@
 // HX711 circuit wiring
 const int LOADCELL_DOUT_PIN = 16;
 const int LOADCELL_SCK_PIN = 4;
+const long KNOWN_WEIGHT = 200.0;
 boolean FIRST_RUN = true;
 
 HX711 scale;
@@ -27,7 +28,7 @@ void loop() {
       long reading = scale.get_units(20);
       Serial.print("Result: ");
       Serial.println(reading);
-      long calibration = reading/200; //calibration = reading / known_weight
+      long calibration = reading/KNOWN_WEIGHT;
       scale.set_scale(calibration);
       Serial.print("Calibration factor: ");
       Serial.println(calibration);
