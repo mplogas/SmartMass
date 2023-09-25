@@ -1,12 +1,5 @@
 #include "scale.h"
 
-/*
-    	Scale(uint8_t dOutPin, uint8_t sckPin);
-        void init(long calibration);
-        void init(long calibration, unsigned long measureEachMs);
-        long calibrate(unsigned long knownWeight); 
-*/
-
 Scale::Scale(uint8_t dOutPin, uint8_t sckPin) {
     scale.begin(dOutPin, sckPin);
 }
@@ -60,19 +53,15 @@ void Scale::tare() {
      }
 }
 
-
-void Scale::measure(Scale::Measurement& measurement) {
+void Scale::measure(Scale::Measurement& measurement, uint8_t samplingSize = 5) {
     unsigned long currentRunMs = millis();
 
     if (currentRunMs - measurement.ts >= timeIntervallMs) {
         if (scale.is_ready()) { 
-            long reading = scale.get_units(10);
+            long reading = scale.get_units(samplingSize);
             
             measurement.ts = currentRunMs;    
             measurement.result = reading;
-
-            // Serial.print("HX711 reading -avg(10): ");
-            // Serial.println(reading);
         } else {
             Serial.println("HX711 not ready for measuring.");
         }

@@ -30,7 +30,7 @@ class Scale
         void init(long calibration, unsigned long measureEachMs);
         long calibrate(unsigned long knownWeight); 
         void tare();
-        void measure(Measurement& measurement);
+        void measure(Measurement& measurement, uint8_t samplingSize);
 };
 
 
