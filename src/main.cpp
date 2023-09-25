@@ -1,60 +1,98 @@
 #include <Arduino.h>
-#include "HX711.h"
+#include "scale.h"
 
-// HX711 circuit wiring
-const int LOADCELL_DOUT_PIN = 16;
-const int LOADCELL_SCK_PIN = 4;
-const long KNOWN_WEIGHT = 100.0;
-boolean FIRST_RUN = true;
+const uint8_t LOADCELL_DOUT_PIN = 16;
+const uint8_t LOADCELL_SCK_PIN = 4;
+const long LOADCELL_CALIBRATION = 987;
+const long LOADCELL_KNOWN_WEIGHT = 100.0;
+const unsigned long LOADCELL_MEASUREMENT_INTERVAL = 1000;
 
-HX711 scale;
+
+Scale scale(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
+Scale::Measurement measurement; 
 
 void setup() {
-  Serial.begin(115200);  
-  scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
+  Serial.begin(115200);
+  while (!Serial)
+    ; // wait for serial attach
+    
+  scale.init(LOADCELL_CALIBRATION, LOADCELL_MEASUREMENT_INTERVAL);
+  measurement.ts = millis();
 }
 
 void loop() {
-  if(FIRST_RUN)  {
-    if (scale.is_ready()) {
-      // taring
-      Serial.println("Tare... remove any weights from the scale.");
-      delay(5000);      
-      scale.set_scale();    
-      scale.tare();
-      Serial.println("Tare done...");
-      delay(1000);
-      Serial.print("Place a known weight on the scale...");
-      delay(5000);
-      long reading = scale.get_units(10);
-      Serial.print("Result: ");
-      Serial.println(reading);
-      long calibration = reading/KNOWN_WEIGHT;
-      Serial.print("Calibration factor: ");
-      Serial.println(calibration);
-      FIRST_RUN = false;
-      Serial.println("Tare again... remove any weights from the scale.");
-      delay(5000);
-      scale.set_scale(calibration);
-      scale.tare();
-    } 
-    else {
-      Serial.println("HX711 not found.");
-    }
-  } else {
-      if (scale.is_ready()) {
-        // continuous
-        long reading = scale.get_units(10);
-        Serial.print("HX711 reading -avg(10): ");
-        Serial.println(reading);
-      }  else {
-        Serial.println("HX711 not found.");
-      }
-    }
+  long previousRun = measurement.ts;
+  scale.measure(measurement);
 
-  delay(1000);
-  
+  if(measurement.ts > previousRun) {
+    Serial.println();
+    Serial.print(measurement.ts);
+    Serial.printf(" - ");
+    Serial.printf(" measurement: ");
+    Serial.print(measurement.result);
+    Serial.printf(" g");
+    Serial.println();
+  }
+
 }
+
+// load cell / hx711 tests
+// #include "HX711.h"
+
+// // HX711 circuit wiring
+// const int LOADCELL_DOUT_PIN = 16;
+// const int LOADCELL_SCK_PIN = 4;
+// const long KNOWN_WEIGHT = 100.0;
+// boolean FIRST_RUN = true;
+
+// HX711 scale;
+
+// void setup() {
+//   Serial.begin(115200);  
+//   scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
+// }
+
+// void loop() {
+//   if(FIRST_RUN)  {
+//     if (scale.is_ready()) {
+//       // taring
+//       Serial.println("Tare... remove any weights from the scale.");
+//       delay(5000);      
+//       scale.set_scale();    
+//       scale.tare();
+//       Serial.println("Tare done...");
+//       delay(1000);
+//       Serial.print("Place a known weight on the scale...");
+//       delay(5000);
+//       long reading = scale.get_units(10);
+//       Serial.print("Result: ");
+//       Serial.println(reading);
+//       long calibration = reading/KNOWN_WEIGHT;
+//       Serial.print("Calibration factor: ");
+//       Serial.println(calibration);
+//       FIRST_RUN = false;
+//       Serial.println("Tare again... remove any weights from the scale.");
+//       delay(5000);
+//       scale.set_scale(calibration);
+//       scale.tare();
+//     } 
+//     else {
+//       Serial.println("HX711 not found.");
+//     }
+//   } else {
+//       if (scale.is_ready()) {
+//         // continuous
+//         long reading = scale.get_units(10);
+//         Serial.print("HX711 reading -avg(10): ");
+//         Serial.println(reading);
+//       }  else {
+//         Serial.println("HX711 not found.");
+//       }
+//     }
+
+//   delay(1000);
+  
+// }
 
 
 
