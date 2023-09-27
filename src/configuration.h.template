@@ -4,15 +4,15 @@
 #include <Arduino.h>
 
 //WiFi
-const char *SSID = "";
-const char *PASSWORD = "";
+const char *WIFI_SSID = "";
+const char *WIFI_PASSWORD = "";
 
 //MQTT
-const char *mqtt_broker = "";
-const char *topic = "filamentwaage/";
-const char *mqtt_username = "";
-const char *mqtt_password = "";
-const int mqtt_port = 1883;
+const char *MQTT_BROKER = "";
+const char *MQTT_TOPIC = "";
+const char *MQTT_USER = "";
+const char *MQTT_PASSWORD = "";
+const int MQTT_PORT = 1883;
 
 //Display
 const uint16_t DISPLAY_WIDTH = 128; 
