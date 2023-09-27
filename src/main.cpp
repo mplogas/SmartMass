@@ -44,6 +44,7 @@ void setupWifi(){
 void setupMqtt() {
   mqtt.setServer(MQTT_BROKER, MQTT_PORT);
   mqtt.setCallback(mqttCallback); //maybe we won't need it vOv
+  //TODO: increase timeout or built reconnect!
 
   while (!mqtt.connected()) {
     String client_id = "esp32-client-";
@@ -91,7 +92,9 @@ void loop() {
       doc["ts"] = measurement.ts;
       doc["value"] = measurement.result;
       serializeJson(doc, buffer);
-      mqtt.publish(MQTT_TOPIC, buffer);
+
+      if(mqtt.connected()) mqtt.publish(MQTT_TOPIC, buffer);
+      else Serial.println("mqtt not connected");
     }
   }
 }
