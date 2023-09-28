@@ -3,8 +3,20 @@
 #include <ArduinoJson.h>
 
 #include "configuration.h"
+#include "mqttclient.h"
 #include "display.h"
 #include "scale.h"
+
+func_t mqttCallback(char *topic, byte *payload, unsigned int length) {
+    Serial.print("Message arrived in topic: ");
+    Serial.println(topic);
+    Serial.print("Message:");
+    for (int i = 0; i < length; i++) {
+        Serial.print((char) payload[i]);
+    }
+    Serial.println();
+    Serial.println("-----------------------");
+};
 
 Display display(DISPLAY_WIDTH, DISPLAY_HEIGHT, DISPLAY_RESET_PIN);
 Display::Data displayData;
@@ -16,16 +28,6 @@ WiFiClient wifi;
 PubSubClient mqtt(wifi);
 StaticJsonDocument<32> doc;
 
-void mqttCallback(char *topic, byte *payload, unsigned int length) {
-    Serial.print("Message arrived in topic: ");
-    Serial.println(topic);
-    Serial.print("Message:");
-    for (int i = 0; i < length; i++) {
-        Serial.print((char) payload[i]);
-    }
-    Serial.println();
-    Serial.println("-----------------------");
-}
 
 void setupWifi(){
   WiFi.mode(WIFI_STA);
@@ -67,6 +69,8 @@ void setup() {
 
   setupWifi();
   setupMqtt();
+
+  //networkClient.receive("topic", mqttCallback);
 
   display.init();
   displayData.title = DISPLAY_DATA_TITLE;
