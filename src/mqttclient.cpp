@@ -1,8 +1,6 @@
 #include "mqttclient.h"
 
-
-
-MqttClient::MqttClient(const char *wifi_ssid, const char *wifi_password, const char *mqtt_broker, int mqtt_port=1833, const char *mqtt_user, const char *mqtt_password, const char *mqtt_clientid, func_t mqtt_callback)
+MqttClient::MqttClient(const char *wifi_ssid, const char *wifi_password, const char *mqtt_broker, int mqtt_port, const char *mqtt_user, const char *mqtt_password, const char *mqtt_clientid, mqttCallback mqtt_callback)
 {
     wifiSsid = wifi_ssid;
     wifiPassword = wifi_password;
@@ -16,44 +14,121 @@ MqttClient::MqttClient(const char *wifi_ssid, const char *wifi_password, const c
     mqtt = new PubSubClient(wifi);
 }
 
-MqttClient::~MqttClient(){}
+MqttClient::~MqttClient() {}
 
-//TODO: non-blocking all the way! //https://github.com/knolleary/pubsubclient/blob/master/examples/mqtt_reconnect_nonblocking/mqtt_reconnect_nonblocking.ino
-bool MqttClient::wifiConnect() {
-    if(WiFi.status() != WL_CONNECTED){
-        while (WiFi.status() != WL_CONNECTED){
+boolean MqttClient::wifiConnect()
+{
+    if (WiFi.status() != WL_CONNECTED)
+    {
+        uint8_t attempt = RETRY_ATTEMPTS;
+        while (WiFi.status() != WL_CONNECTED && attempt)
+        {
             WiFi.begin(wifiSsid, wifiPassword);
-            uint8_t attempt = RETRY_ATTEMPTS;
-            while (attempt && (WiFi.status() != WL_CONNECTED)) {
-                attempt--;
+            uint8_t timeout = RETRY_TIMEOUT;
+            while (timeout && (WiFi.status() != WL_CONNECTED))
+            {
+                timeout--;
                 delay(1000);
             }
+            attempt--;
+        }
+
+        if (WiFi.status() != WL_CONNECTED)
+        {
+            Serial.println("WiFi connection attempts exhausted. Giving up.");
+            Serial.println();
+            return false;
+        } else {
+            Serial.printf("WiFi client IP: ");
+            Serial.print(WiFi.localIP());
+            Serial.println();
+            Serial.printf("RRSI: ");
+            Serial.print(WiFi.RSSI());
+            Serial.println();
         }
     }
+    return true;
 }
 
-bool MqttClient::mqttConnect() {
-    bool result = true;
-    if(!mqtt->connected()) {
-        result = false;
+// TODO: non-blocking all the way! //https://github.com/knolleary/pubsubclient/blob/master/examples/mqtt_reconnect_nonblocking/mqtt_reconnect_nonblocking.ino
+boolean MqttClient::mqttConnect()
+{
+    if (!mqtt->connected())
+    {
         mqtt->setCallback(callback);
         mqtt->setSocketTimeout(MQTT_TIMEOUT);
         mqtt->setKeepAlive(MQTT_TIMEOUT);
         mqtt->setServer(mqttBroker, mqttPort);
-        
+
         uint8_t attempt = RETRY_ATTEMPTS;
-        while((!mqtt->connected()) && attempt) {
-            result = mqtt->connect(mqttClientId, mqttUser, mqttPassword);
+        while (!mqtt->connected() && attempt)
+        {
+            mqtt->connect(mqttClientId, mqttUser, mqttPassword);
+            uint8_t timeout = RETRY_TIMEOUT;
+            while (!mqtt->connected() && timeout)
+            {
+                delay(1000);
+                timeout--;
+            }
             attempt--;
-            delay(1000);
+        }
+
+        if (!mqtt->connected())
+        {
+            Serial.println("MQTT connection attempts exhausted. Giving up.");
+            Serial.println();
+            return false;
         }
     }
 
-    return result;
+    return true;
 }
 
+void MqttClient::loop()
+{
+    if (wifiConnect() && mqttConnect())
+        mqtt->loop();
+}
 
-void MqttClient::disconnect() {}
-void MqttClient::init() {}
-//void MqttClient::publish(const char *topic, char[] payload){}
-void MqttClient::subscribe(const char *topic){}
+void MqttClient::disconnect()
+{
+    if (mqtt->connected())
+    {
+        mqtt->disconnect();
+        Serial.println("Disconnected from MQTT broker.");
+        Serial.println();
+    }
+}
+void MqttClient::init()
+{
+    if (wifiConnect() && mqttConnect())
+        Serial.println("Connected to MQTT broker.");
+    else
+        Serial.println("Failed to connect to MQTT broker.");
+
+    Serial.println();
+}
+
+void MqttClient::publish(const char *topic, char payload[])
+{
+    if (wifiConnect() && mqttConnect())
+    {
+        mqtt->publish(topic, payload);
+        Serial.print(millis());
+        Serial.printf(" - published payload to topic ");
+        Serial.print(topic);
+        Serial.println();
+    }
+}
+
+void MqttClient::subscribe(const char *topic)
+{
+    if (wifiConnect() && mqttConnect())
+    {
+        mqtt->subscribe(topic, 0);
+        Serial.print(millis());
+        Serial.printf(" - subscribed to topic ");
+        Serial.print(topic);
+        Serial.println();
+    }
+}

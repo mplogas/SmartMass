@@ -5,36 +5,43 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 
-typedef void (*func_t)(char *topic, byte *payload, unsigned int length);
+typedef void (*mqttCallback)(char *topic, byte *payload, unsigned int length);
 #define MQTT_TIMEOUT 60
 #define RETRY_ATTEMPTS 5
+#define RETRY_TIMEOUT 3 // seconds
 
 class MqttClient
 {
 private:
     WiFiClient wifi;
-    PubSubClient* mqtt;
-    const char* wifiSsid;
-    const char* wifiPassword;
-    const char* mqttBroker;
+    PubSubClient *mqtt;
+    const char *wifiSsid;
+    const char *wifiPassword;
+    const char *mqttBroker;
     int mqttPort;
-    const char* mqttUser;
-    const char* mqttPassword; 
+    const char *mqttUser;
+    const char *mqttPassword;
     const char *mqttClientId;
-    func_t callback;
+    mqttCallback callback;
     bool wifiConnect();
     bool mqttConnect();
-    void mqttDisconnect();    
+    void mqttDisconnect();
+
 protected:
     void connect();
     void disconnect();
+
 public:
-    enum MessageType { Telemetry, Payload};
-    MqttClient(const char *wifiSsid, const char *wifiPassword, const char *mqttBroker, int mqttPort, const char *mqttUser, const char *mqttPassword, const char *mqttClientId, func_t callback);
+    enum MessageType
+    {
+        Telemetry,
+        Payload
+    };
+    MqttClient(const char *wifiSsid, const char *wifiPassword, const char *mqttBroker, int mqttPort, const char *mqttUser, const char *mqttPassword, const char *mqttClientId, mqttCallback callback);
     ~MqttClient();
     void init();
     void loop();
-    void publish(const char *topic, char[] payload);
+    void publish(const char *topic, char payload[]);
     void subscribe(const char *topic);
 };
 
