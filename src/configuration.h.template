@@ -20,6 +20,7 @@ const uint16_t DISPLAY_HEIGHT = 64;
 const int8_t DISPLAY_RESET_PIN = -1; // Reset pin # (or -1 if sharing Arduino reset pin)
 const String DISPLAY_DATA_TITLE = "Weight:";
 const String DISPLAY_DATA_UNIT = "g";
+const unsigned long DISPLAY_TIMEOUT = 60000; //milliseconds
 
 // Load Cell
 const uint8_t LOADCELL_DOUT_PIN = 16;
