@@ -21,14 +21,11 @@ void callback(char *topic, byte *payload, unsigned int length)
 
 MqttClient mqttClient(WIFI_SSID, WIFI_PASSWORD, MQTT_BROKER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD, MQTT_CLIENTID, callback);
 
-
-Display display(DISPLAY_WIDTH, DISPLAY_HEIGHT, DISPLAY_RESET_PIN);
+Display display(DISPLAY_WIDTH, DISPLAY_HEIGHT, DISPLAY_RESET_PIN, DISPLAY_TIMEOUT);
 Display::Data displayData;
 
 Scale scale(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
 Scale::Measurement measurement;
-
-
 
 void setup()
 {
@@ -42,10 +39,9 @@ void setup()
 
   scale.init(LOADCELL_CALIBRATION, LOADCELL_MEASUREMENT_INTERVAL);
   measurement.ts = millis();
-  
+
   mqttClient.init();
   mqttClient.subscribe(MQTT_TOPIC);
-
 }
 
 void loop()
@@ -69,7 +65,11 @@ void loop()
 
       mqttClient.publish(MQTT_TOPIC, buffer);
     }
-  } else {
+  }
+  else
+  {
     mqttClient.loop();
   }
+
+  display.loop();
 }
