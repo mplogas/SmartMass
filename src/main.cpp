@@ -20,6 +20,7 @@ void callback(char *topic, byte *payload, unsigned int length)
 };
 
 MqttClient mqttClient(WIFI_SSID, WIFI_PASSWORD, MQTT_BROKER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD, MQTT_CLIENTID, callback);
+const String fullTopic = String(MQTT_TOPIC + TOPIC_SEPARATOR + MQTT_CLIENTID); 
 
 Display display(DISPLAY_WIDTH, DISPLAY_HEIGHT, DISPLAY_RESET_PIN, DISPLAY_TIMEOUT);
 Display::Data displayData;
@@ -41,7 +42,7 @@ void setup()
   measurement.ts = millis();
 
   mqttClient.init();
-  mqttClient.subscribe(MQTT_TOPIC);
+  mqttClient.subscribe(fullTopic.c_str());
 }
 
 void loop()
@@ -63,7 +64,7 @@ void loop()
       doc["value"] = measurement.result;
       serializeJson(doc, buffer);
 
-      mqttClient.publish(MQTT_TOPIC, buffer);
+      mqttClient.publish(fullTopic.c_str(), buffer);
     }
   }
   else
