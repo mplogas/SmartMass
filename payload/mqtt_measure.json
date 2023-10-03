@@ -1,0 +1,16 @@
+{
+    "ts": 1351824120,
+    "action": "measure",
+    "spool": {
+        "spool_id": 17,
+        "tag_id": 4353453,
+        "vendor": "Sunlu",
+        "material": "PETG",
+        "color": "transparent",
+        "name": "Unlabeled Transparent PETG",
+        "total_weight": 378,
+        "empty_spool_weight": 102,
+        "unit": "g",
+        "created": "2022-10-23"
+    }    
+  }

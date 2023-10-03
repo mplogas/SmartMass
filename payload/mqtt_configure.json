@@ -1,0 +1,14 @@
+{
+    "ts": 1351824120,
+    "action": "configure",
+    "scale": {
+        "update_interval": 500,
+        "sampling_size": 1,
+        "calibration": 981,
+        "known_weight": 100
+    },
+    "display": {
+        "unit": "g",
+        "display_timeout": 60000
+    }
+}

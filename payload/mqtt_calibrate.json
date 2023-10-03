@@ -1,0 +1,6 @@
+//server sends no result, client replies with result
+{
+    "ts": 1351824120,
+    "action": "calibrate",
+    "result": 981 
+}
