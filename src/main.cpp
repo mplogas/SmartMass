@@ -31,8 +31,6 @@ Scale::Measurement measurement;
 void setup()
 {
   Serial.begin(115200);
-  while (!Serial)
-    ; // wait for serial attach
 
   display.init();
   displayData.title = DISPLAY_DATA_TITLE;

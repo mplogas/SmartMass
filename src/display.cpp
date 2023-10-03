@@ -12,7 +12,7 @@ void Display::clearDisplay()
     pDevice->display();
 }
 
-void Display::initDisplay()
+void Display::showInitMessage()
 {
     displayStandby = false;
 
@@ -40,6 +40,7 @@ void Display::showMessage(String msg)
     lastUpdate = millis();
 }
 
+//initializes the display initializes and upon success shows the init display for 1.5s and then shows the ready screen
 void Display::init()
 {
     if (!pDevice->begin(SSD1306_SWITCHCAPVCC, 0x3C))
@@ -49,8 +50,8 @@ void Display::init()
     }
     else
     {
-        initDisplay();
-        delay(1500);
+        showInitMessage();
+        delay(1500); 
         showMessage("Put a weight on your scale to get started.");
         Serial.println(F("SSD1306 init succeeded"));
     }

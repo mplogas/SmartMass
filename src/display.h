@@ -12,7 +12,7 @@ private:
     unsigned long lastUpdate = 0;
     bool displayStandby = false;;
     void clearDisplay();
-    void initDisplay();
+    void showInitMessage();
     void showMessage(String msg);
 
 public:
