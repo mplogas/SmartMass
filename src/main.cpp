@@ -1,5 +1,5 @@
-#include "constants.h"
 #include "configuration.h"
+#include "constants.h"
 #include "mqttclient.h"
 #include "display.h"
 #include "scale.h"
