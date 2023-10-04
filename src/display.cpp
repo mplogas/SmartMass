@@ -28,6 +28,26 @@ void Display::showInitMessage()
     lastUpdate = millis();
 }
 
+void Display::showErrorMessage(Display::Error &error)
+{
+    displayStandby = false;
+
+    pDevice->clearDisplay();
+    pDevice->setTextColor(WHITE);
+    pDevice->setTextSize(2);
+    pDevice->setCursor(45, 3);
+    pDevice->println("Error");
+    pDevice->setCursor(0, 20);    
+    pDevice->setTextSize(1);
+    pDevice->printf("Module: ");
+    pDevice->print(error.module);    
+    pDevice->setCursor(0, 35);    
+    pDevice->println(error.msg);
+    pDevice->display();
+
+    lastUpdate = millis();
+}
+
 void Display::showMessage(String msg)
 {
     displayStandby = false;
@@ -41,23 +61,19 @@ void Display::showMessage(String msg)
 }
 
 //initializes the display initializes and upon success shows the init display for 1.5s and then shows the ready screen
-void Display::init()
+bool Display::init()
 {
-    if (!pDevice->begin(SSD1306_SWITCHCAPVCC, 0x3C))
-    {
-        Serial.println(F("SSD1306 allocation failed"));
-        // TODO: meaningful error handling in case the display couldn't be set up
-    }
-    else
-    {
-        showInitMessage();
-        delay(1500); 
-        showMessage("Put a weight on your scale to get started.");
+    bool result = pDevice->begin(SSD1306_SWITCHCAPVCC, 0x3C);
+    if(result){
         Serial.println(F("SSD1306 init succeeded"));
+    } else {
+        Serial.println(F("SSD1306 allocation failed"));
     }
+
+    return result;
 }
 
-void Display::show(Display::Data &data)
+void Display::showMeasurement(Display::Data &data)
 {
     displayStandby = false;
 

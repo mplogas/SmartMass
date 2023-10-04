@@ -24,8 +24,9 @@ public:
     void init(long calibration);
     void init(long calibration, unsigned long measureEachMs);
     long calibrate(unsigned long knownWeight);
-    void tare();
+    bool tare();
     void measure(Measurement &measurement, uint8_t samplingSize);
+    bool isReady();
 };
 
 #endif

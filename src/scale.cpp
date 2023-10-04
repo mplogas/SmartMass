@@ -57,15 +57,17 @@ long Scale::calibrate(unsigned long knownWeight)
     return calibration;
 }
 
-void Scale::tare()
+bool Scale::tare()
 {
     if (scale.is_ready())
     {
         scale.tare();
+        return true;
     }
     else
     {
         Serial.println("HX711 not ready for taring.");
+        return false;
     }
 }
 
@@ -87,4 +89,8 @@ void Scale::measure(Scale::Measurement &measurement, uint8_t samplingSize = 5)
             Serial.println("HX711 not ready for measuring.");
         }
     }
+}
+
+bool Scale::isReady() {
+    return scale.is_ready();
 }
