@@ -1,8 +1,9 @@
+#include "constants.h"
 #include "configuration.h"
-#include <ArduinoJson.h>
 #include "mqttclient.h"
 #include "display.h"
 #include "scale.h"
+#include <ArduinoJson.h>
 
 enum RunMode
 {
@@ -13,6 +14,18 @@ enum RunMode
     Measure, 
     Error
 };
+
+struct Configuration {
+  
+  unsigned long displayTimeout; 
+  long loadcellCalibration;
+  unsigned long loadcellKnownWeight;
+  unsigned long loadcellMeasurementIntervall;
+  uint8_t loadcellMeasurementSampling;
+};
+Configuration config;
+
+
 RunMode currentMode = RunMode::Initialize;
 
 StaticJsonDocument<32> doc;
@@ -44,29 +57,55 @@ Display::Error displayError;
 Scale scale(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
 Scale::Measurement measurement;
 
+void intializeConfiguration() {
+  config.displayTimeout = DISPLAY_TIMEOUT;
+  config.loadcellCalibration = LOADCELL_CALIBRATION;
+  config.loadcellKnownWeight = LOADCELL_KNOWN_WEIGHT;
+  config.loadcellMeasurementIntervall = LOADCELL_MEASUREMENT_INTERVAL;
+  config.loadcellMeasurementSampling = LOADCELL_MEASUREMENT_SAMPLING;
+}
 
-void initialize(){
+void initializeDevice(){
   display.showInitMessage();
   delay(1500);
   if(scale.isReady()) {
-    display.showMessage(SCALE_READY_MESSAGE);
+    display.showMessage(MESSAGE_SCALE_READY);
     currentMode = RunMode::Measure;
   } else {
     displayError.module = MODULE_SCALE;
     displayError.msg = ERROR_SCALE_NOT_READY;
     display.showErrorMessage(displayError);
+
+    currentMode = RunMode::Error;
   }
 }
 
-void calibrate(){}
+void calibrateDevice(){
+  display.showMessage(MESSAGE_CALIBRATION_START);
+  delay(1000);
+  display.showMessage(MESSAGE_TARE_START);
+  delay(5000);
+  scale.calibrationStep01();
+  display.showMessage(MESSAGE_CALIBRATION_KNOWN_WEIGHT);
+  delay(5000);
+  long result = scale.calibrationStep02(config.loadcellKnownWeight);
+  display.showCalibrationMessage(result);
+  //TODO: mqtt response
+  delay(5000);
+  currentMode = RunMode::Measure;
+}
 
-void configure(){}
+void configureDevice(){
+  //reload and stuff
+  
+  currentMode = RunMode::Measure;
+}
 
 void tare(){  
-  display.showMessage(TARE_MESSAGE);
+  display.showMessage(MESSAGE_TARE_START);
   delay(1500);
   if(scale.tare()) {
-    display.showMessage(TARE_READY_MESSAGE);
+    display.showMessage(MESSAGE_TARE_READY);
     currentMode = RunMode::Measure;
   } else {
     displayError.module = MODULE_SCALE;
@@ -79,7 +118,7 @@ void tare(){
 void measure(){
   long previousRun = measurement.ts;
   unsigned long previousValue = measurement.result;
-  scale.measure(measurement, LOADCELL_MEASUREMENT_SAMPLING);
+  scale.measure(measurement, config.loadcellMeasurementSampling);
 
   if (measurement.ts > previousRun)
   {
@@ -103,11 +142,13 @@ void setup()
 {
   Serial.begin(115200);
 
+  intializeConfiguration();
+
   display.init();
   displayData.title = DISPLAY_DATA_TITLE;
   displayData.unit = DISPLAY_DATA_UNIT;
 
-  scale.init(LOADCELL_CALIBRATION, LOADCELL_MEASUREMENT_INTERVAL);
+  scale.init(config.loadcellCalibration, config.loadcellMeasurementIntervall);
   measurement.ts = millis();
 
   mqttClient.init();
@@ -117,15 +158,15 @@ void setup()
 void loop()
 {           
   switch (currentMode)
-  {
+  {  
   case RunMode::Initialize:
-    initialize();
+    initializeDevice();
     break;  
   case RunMode::Calibrate:
-    calibrate();
+    calibrateDevice();
     break;  
   case RunMode::Configure:
-    configure();
+    configureDevice();
     break;  
   case RunMode::Tare:
     tare();

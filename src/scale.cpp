@@ -36,18 +36,12 @@ long Scale::calibrate(unsigned long knownWeight)
     {
         Serial.println("Tare... remove any weights from the scale.");
         delay(5000);
-        scale.set_scale();
-        scale.tare();
+        calibrationStep01();
         Serial.println("Tare done...");
         delay(1000);
         Serial.print("Place a known weight on the scale...");
         delay(5000);
-        long reading = scale.get_units(10);
-        Serial.print("Result: ");
-        Serial.println(reading);
-        calibration = reading / knownWeight;
-        Serial.print("Calibration factor: ");
-        Serial.println(calibration);
+        calibration = calibrationStep02(knownWeight);
     }
     else
     {
@@ -55,6 +49,20 @@ long Scale::calibrate(unsigned long knownWeight)
     }
 
     return calibration;
+}
+void Scale::calibrationStep01() {
+        scale.set_scale();
+        scale.tare(5);
+}
+long Scale::calibrationStep02(unsigned long knownWeight) {
+        long reading = scale.get_units(10);
+        Serial.print("Reading (10): ");
+        Serial.println(reading);
+        long calibration = reading / knownWeight;
+        Serial.print("Calibration factor: ");
+        Serial.println(calibration);
+
+        return calibration;
 }
 
 bool Scale::tare()

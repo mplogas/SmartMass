@@ -5,3 +5,5 @@
 .vscode/ipch
 src/configuration.h
 *.code-workspace
+3d-models/*.FCStd
+3d-models/*.FCBak

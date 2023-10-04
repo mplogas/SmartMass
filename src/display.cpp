@@ -20,9 +20,9 @@ void Display::showInitMessage()
     pDevice->setTextColor(WHITE);
     pDevice->setTextSize(1);
     pDevice->setCursor(0, 20);
-    pDevice->println("filamentwaage");
+    pDevice->println(TITLE_INITIALIZE);
     pDevice->setCursor(0, 30);
-    pDevice->println("initializing...");
+    pDevice->println(MESSAGE_INITIALIZE);
     pDevice->display();
 
     lastUpdate = millis();
@@ -36,10 +36,10 @@ void Display::showErrorMessage(Display::Error &error)
     pDevice->setTextColor(WHITE);
     pDevice->setTextSize(2);
     pDevice->setCursor(45, 3);
-    pDevice->println("Error");
+    pDevice->println(TITLE_ERROR);
     pDevice->setCursor(0, 20);    
     pDevice->setTextSize(1);
-    pDevice->printf("Module: ");
+    pDevice->printf(TITLE_MODULE);
     pDevice->print(error.module);    
     pDevice->setCursor(0, 35);    
     pDevice->println(error.msg);
@@ -48,7 +48,7 @@ void Display::showErrorMessage(Display::Error &error)
     lastUpdate = millis();
 }
 
-void Display::showMessage(String msg)
+void Display::showMessage(const char *msg)
 {
     displayStandby = false;
     pDevice->clearDisplay();
@@ -57,6 +57,25 @@ void Display::showMessage(String msg)
     pDevice->setCursor(0, 15);
     pDevice->println(msg);
     pDevice->display();
+    lastUpdate = millis();
+}
+
+void Display::showCalibrationMessage(long calibration)
+{
+    displayStandby = false;
+
+    pDevice->clearDisplay();
+    pDevice->setTextColor(WHITE);
+    pDevice->setTextSize(1);
+    pDevice->setCursor(0, 5);
+    pDevice->println(TITLE_CALIBRATION);
+    pDevice->setCursor(0, 15);
+    pDevice->println(MESSAGE_CALIBRATION_READY);
+    pDevice->setTextSize(2);
+    pDevice->setCursor(10, 22);
+    pDevice->println(calibration);
+    pDevice->display();
+
     lastUpdate = millis();
 }
 

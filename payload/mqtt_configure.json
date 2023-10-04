@@ -8,7 +8,6 @@
         "known_weight": 100
     },
     "display": {
-        "unit": "g",
         "display_timeout": 60000
     }
 }

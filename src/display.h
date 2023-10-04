@@ -1,6 +1,7 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
+#include "constants.h"
 #include <Arduino.h>
 #include <Adafruit_SSD1306.h>
 
@@ -15,9 +16,9 @@ private:
 public:
     struct Data
     {
-        String title;
+        const char *title;
         unsigned long result;
-        String unit;
+        const char *unit;
     };
     struct Error {
         const char *module;
@@ -29,7 +30,8 @@ public:
     void loop();
     void showInitMessage();
     void showErrorMessage(Error &error);
-    void showMessage(String msg);
+    void showMessage(const char *msg);
+    void showCalibrationMessage(long calibration);
 };
 
 #endif
