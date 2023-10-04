@@ -9,7 +9,7 @@ const char *WIFI_PASSWORD = "";
 
 //MQTT
 const char *MQTT_BROKER = "";
-const char *MQTT_TOPIC = "";
+const char *MQTT_TOPIC = ""; //without tailing slash!
 const char *MQTT_USER = "";
 const char *MQTT_PASSWORD = "";
 const int MQTT_PORT = 1883;

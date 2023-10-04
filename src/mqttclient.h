@@ -10,7 +10,7 @@ typedef void (*mqttCallback)(char *topic, byte *payload, unsigned int length);
 #define RETRY_ATTEMPTS 5
 #define RETRY_TIMEOUT 3 // seconds
 
-const String TOPIC_SEPARATOR = "/";
+static const String MQTT_TOPIC_SEPARATOR = "/";
 
 class MqttClient
 {

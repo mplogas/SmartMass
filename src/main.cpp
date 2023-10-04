@@ -48,7 +48,7 @@ void callback(char *topic, byte *payload, unsigned int length)
 };
 
 MqttClient mqttClient(WIFI_SSID, WIFI_PASSWORD, MQTT_BROKER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD, MQTT_CLIENTID, callback);
-const String fullTopic = String(MQTT_TOPIC + TOPIC_SEPARATOR + MQTT_CLIENTID); 
+const String fullTopic = String(MQTT_TOPIC + MQTT_TOPIC_SEPARATOR + MQTT_CLIENTID); 
 
 Display display(DISPLAY_WIDTH, DISPLAY_HEIGHT, DISPLAY_RESET_PIN, DISPLAY_TIMEOUT);
 Display::Data displayData;
