@@ -32,19 +32,27 @@ StaticJsonDocument<32> doc;
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
-  // Serial.print("Message arrived in topic: ");
-  // Serial.println(topic);
-  // Serial.print("Message:");
-  // for (int i = 0; i < length; i++)
-  // {
-  //   Serial.print((char)payload[i]);
-  // }
-  // Serial.println();
-  // Serial.println("-----------------------");
-
   StaticJsonDocument<512> doc;
   deserializeJson(doc, payload, length);
-  //doc["action"]
+  if(doc != NULL && doc.containsKey("action")) {
+    if(strcmp(doc["action"], "tare") == 0) {
+      currentMode = RunMode::Tare;
+      Serial.printf(doc["action"]);
+    }
+    else if(strcmp(doc["action"], "calibrate") == 0) {
+      currentMode = RunMode::Calibrate;
+      Serial.printf(doc["action"]);
+    }
+    else if(strcmp(doc["action"], "configure") == 0) {
+      //TODO: get config data from payload
+      currentMode = RunMode::Configure;
+      Serial.printf(doc["action"]);
+    }
+    else if(strcmp(doc["action"], "error-debug") == 0) {
+      currentMode = RunMode::Error;
+      Serial.printf(doc["action"]);
+    }
+  } 
 };
 
 MqttClient mqttClient(WIFI_SSID, WIFI_PASSWORD, MQTT_BROKER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD, MQTT_CLIENTID, callback);
