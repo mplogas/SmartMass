@@ -35,9 +35,9 @@ void Display::showErrorMessage(Display::Error &error)
     pDevice->clearDisplay();
     pDevice->setTextColor(WHITE);
     pDevice->setTextSize(2);
-    pDevice->setCursor(45, 3);
+    pDevice->setCursor(40, 3);
     pDevice->println(TITLE_ERROR);
-    pDevice->setCursor(0, 20);    
+    pDevice->setCursor(30, 20);    
     pDevice->setTextSize(1);
     pDevice->printf(TITLE_MODULE);
     pDevice->print(error.module);    
@@ -72,7 +72,7 @@ void Display::showCalibrationMessage(long calibration)
     pDevice->setCursor(0, 15);
     pDevice->println(MESSAGE_CALIBRATION_READY);
     pDevice->setTextSize(2);
-    pDevice->setCursor(10, 22);
+    pDevice->setCursor(10, 28);
     pDevice->println(calibration);
     pDevice->display();
 

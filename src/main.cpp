@@ -28,35 +28,45 @@ Configuration config;
 
 RunMode currentMode = RunMode::Initialize;
 
-StaticJsonDocument<32> doc;
 
 void callback(char *topic, byte *payload, unsigned int length)
-{
+{    
   StaticJsonDocument<512> doc;
-  deserializeJson(doc, payload, length);
-  if(doc != NULL && doc.containsKey("action")) {
-    if(strcmp(doc["action"], "tare") == 0) {
+  ArduinoJson::V6213PB2::DeserializationError serializationResult = deserializeJson(doc, payload, length);
+  if(doc != NULL && doc.containsKey(ACTION_KEY)) {
+    
+    Serial.printf(doc[ACTION_KEY]);
+    if(strcmp(doc[ACTION_KEY], ACTION_TARE) == 0) {
       currentMode = RunMode::Tare;
-      Serial.printf(doc["action"]);
     }
-    else if(strcmp(doc["action"], "calibrate") == 0) {
+    else if(strcmp(doc[ACTION_KEY], ACTION_CALIBRATE) == 0) {
       currentMode = RunMode::Calibrate;
-      Serial.printf(doc["action"]);
     }
-    else if(strcmp(doc["action"], "configure") == 0) {
+    else if(strcmp(doc[ACTION_KEY], ACTION_CONFIGURE) == 0) {
       //TODO: get config data from payload
+      JsonObject scale = doc["scale"];
+      if(scale != NULL) {
+
+      }
+
+      JsonObject display = doc["display"];
+      if(display != NULL) {
+        unsigned long timeout = display["display_timeout"];
+        if(timeout != 0) config.displayTimeout = timeout;
+      }
+
       currentMode = RunMode::Configure;
-      Serial.printf(doc["action"]);
+      Serial.printf(doc[ACTION_KEY]);
     }
-    else if(strcmp(doc["action"], "error-debug") == 0) {
+    else if(strcmp(doc[ACTION_KEY], ACTION_TEST) == 0) {
       currentMode = RunMode::Error;
-      Serial.printf(doc["action"]);
+      Serial.printf(doc[ACTION_KEY]);
     }
   } 
 };
 
 MqttClient mqttClient(WIFI_SSID, WIFI_PASSWORD, MQTT_BROKER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD, MQTT_CLIENTID, callback);
-const String fullTopic = String(MQTT_TOPIC + MQTT_TOPIC_SEPARATOR + MQTT_CLIENTID); 
+const char *fullTopic;
 
 Display display(DISPLAY_WIDTH, DISPLAY_HEIGHT, DISPLAY_RESET_PIN, DISPLAY_TIMEOUT);
 Display::Data displayData;
@@ -75,7 +85,7 @@ void intializeConfiguration() {
 
 void initializeDevice(){
   display.showInitMessage();
-  delay(1500);
+  delay(3000);
   if(scale.isReady()) {
     display.showMessage(MESSAGE_SCALE_READY);
     currentMode = RunMode::Measure;
@@ -98,7 +108,16 @@ void calibrateDevice(){
   delay(5000);
   long result = scale.calibrationStep02(config.loadcellKnownWeight);
   display.showCalibrationMessage(result);
-  //TODO: mqtt response
+  
+  //config.loadcellCalibration = result;
+  
+  StaticJsonDocument<96> doc;
+  char buffer[96];
+  doc[ACTION_KEY] = "calibrate";
+  doc["result"] = result;
+  serializeJson(doc, buffer);
+  mqttClient.publish(fullTopic, buffer);
+
   delay(5000);
   currentMode = RunMode::Measure;
 }
@@ -136,12 +155,13 @@ void measure(){
       display.showMeasurement(displayData);
 
       // https://arduinojson.org/v6/how-to/use-arduinojson-with-pubsubclient/
+      StaticJsonDocument<32> doc;
       char buffer[32];
       doc["ts"] = measurement.ts;
       doc["value"] = measurement.result;
       serializeJson(doc, buffer);
 
-      mqttClient.publish(fullTopic.c_str(), buffer);
+      mqttClient.publish(fullTopic, buffer);
     }
   }
 }
@@ -159,8 +179,9 @@ void setup()
   scale.init(config.loadcellCalibration, config.loadcellMeasurementIntervall);
   measurement.ts = millis();
 
+  fullTopic = String(MQTT_TOPIC + MQTT_TOPIC_SEPARATOR + MQTT_CLIENTID).c_str();
   mqttClient.init();
-  mqttClient.subscribe(fullTopic.c_str());
+  mqttClient.subscribe(fullTopic);
 }
 
 void loop()
@@ -183,6 +204,9 @@ void loop()
     //TODO: error recovery, maybe re-init? 
 
     // for now
+    displayError.module = "DEBUG";
+    displayError.msg = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
+    display.showErrorMessage(displayError);
     delay(5000);
     currentMode = RunMode::Measure;
     break;
