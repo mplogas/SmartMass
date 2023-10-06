@@ -34,6 +34,10 @@ void callback(char *topic, byte *payload, unsigned int length)
 {
   StaticJsonDocument<512> doc;
   ArduinoJson::V6213PB2::DeserializationError serializationResult = deserializeJson(doc, payload, length);
+  if (serializationResult) {
+    Serial.println("serialization failed.");
+  }
+
   if (doc != NULL && doc.containsKey(ACTION_KEY))
   {
 
@@ -43,22 +47,84 @@ void callback(char *topic, byte *payload, unsigned int length)
     }
     else if (strcmp(doc[ACTION_KEY], ACTION_CALIBRATE) == 0)
     {
-      if(!doc.containsKey("result")) currentMode = RunMode::Calibrate;
+      if (!doc.containsKey("result"))
+        currentMode = RunMode::Calibrate;
     }
     else if (strcmp(doc[ACTION_KEY], ACTION_CONFIGURE) == 0)
     {
-      // TODO: get config data from payload
+      
+      Serial.println("configure action started");
       JsonObject scale = doc["scale"];
       if (scale != NULL)
       {
+        Serial.println("scale object found");
+        // instead of using containsKey() and accessing the value via key, we save ONE key lookup by using ArduinoJSONs default values.
+        long loadcellCalibration = scale["calibration"];
+        unsigned long loadcellKnownWeight = scale["known_weight"];
+        unsigned long loadcellMeasurementIntervall = scale["update_interval"];
+        uint8_t loadcellMeasurementSampling = scale["sampling_size"];
+
+        //NOTE: late night note - it seems the default configuration payload is too large, so either send scale or display. 
+        // or i find a way to compress/protobuf the payload.
+
+        if (loadcellCalibration != 0)
+        {
+          Serial.printf("loadcell calibration read: ");
+          Serial.print(config.loadcellCalibration);
+          Serial.println();
+          config.loadcellCalibration = loadcellCalibration;
+          Serial.printf("loadcell calibration write: ");
+          Serial.print(config.loadcellCalibration);
+          Serial.println();
+        }
+        if (loadcellKnownWeight != 0)
+        {
+          Serial.printf("loadcell known weight read: ");
+          Serial.print(config.loadcellKnownWeight);
+          Serial.println();
+          config.loadcellKnownWeight = loadcellKnownWeight;
+          Serial.printf("loadcell known weight write: ");
+          Serial.print(config.loadcellKnownWeight);
+          Serial.println();
+        }
+        if (loadcellMeasurementIntervall != 0)
+        {
+          Serial.printf("loadcell measurement intervall read: ");
+          Serial.print(config.loadcellMeasurementIntervall);
+          Serial.println();
+          config.loadcellMeasurementIntervall = loadcellMeasurementIntervall;
+          Serial.printf("loadcell measurement intervall write: ");
+          Serial.print(config.loadcellMeasurementIntervall);
+          Serial.println();
+        }
+        if (loadcellMeasurementSampling != 0)
+        {          
+          Serial.printf("loadcell measurement sampling read: ");
+          Serial.print(config.loadcellMeasurementSampling);
+          Serial.println();
+          config.loadcellMeasurementSampling = loadcellMeasurementSampling;          
+          Serial.printf("loadcell measurement sampling write: ");
+          Serial.print(config.loadcellMeasurementSampling);
+          Serial.println();
+        }
       }
 
       JsonObject display = doc["display"];
       if (display != NULL)
       {
-        unsigned long timeout = display["display_timeout"];
-        if (timeout != 0)
-          config.displayTimeout = timeout;
+        // can't use the efficient way, as a display_timeout of zero and ArduinoJson type defaults are not necessarily the same thing
+        // unsigned long timeout = display["display_timeout"];
+        // if (timeout != 0) config.displayTimeout = timeout;
+        if (display.containsKey("display_timeout"))
+        {
+          Serial.printf("display timeout read: ");
+          Serial.print(config.displayTimeout);
+          Serial.println();
+          config.displayTimeout = display["display_timeout"];
+          Serial.printf("display timeout read: ");
+          Serial.print(config.displayTimeout);
+          Serial.println();
+        }
       }
 
       currentMode = RunMode::Configure;
@@ -89,17 +155,19 @@ void intializeConfiguration()
   config.loadcellMeasurementSampling = LOADCELL_MEASUREMENT_SAMPLING;
 }
 
-void setRunModeMeasure() {
+void setRunModeMeasure()
+{
   modeSwitch = true;
   currentMode = RunMode::Measure;
 }
 
-void setRunModeError(const char *module, const char *msg) {
-    displayError.module = module;
-    displayError.msg = msg;
-    display.showErrorMessage(displayError);
+void setRunModeError(const char *module, const char *msg)
+{
+  displayError.module = module;
+  displayError.msg = msg;
+  display.showErrorMessage(displayError);
 
-    currentMode = RunMode::Error;
+  currentMode = RunMode::Error;
 }
 void initializeDevice()
 {
@@ -130,7 +198,7 @@ void calibrateDevice()
   long result = scale.calibrationStep02(config.loadcellKnownWeight);
   display.showCalibrationMessage(result);
 
-  // TODO: writing calibration data immediately?
+  // TODO: writing calibration data immediately? yes/no?
   // config.loadcellCalibration = result;
 
   StaticJsonDocument<96> doc;
@@ -147,11 +215,22 @@ void calibrateDevice()
 void configureDevice()
 {
   display.showTitle(TITLE_CONFIGURATION);
-  delay(1000);
+  delay(1500);
 
-  // TODO: reload and stuff
+  display.setScreenTimeOut(config.displayTimeout);
 
   
+  Serial.printf("loadcell calibration: ");
+  Serial.print(config.loadcellCalibration);
+  Serial.println();
+
+  Serial.printf("loadcell measurement intervall: ");
+  Serial.print(config.loadcellMeasurementIntervall);
+  Serial.println();
+  scale.init(config.loadcellCalibration, config.loadcellMeasurementIntervall);
+
+  delay(1500);
+
   setRunModeMeasure();
 }
 
@@ -163,7 +242,7 @@ void tare()
   delay(1500);
   if (scale.tare())
   {
-    display.showMessage(MESSAGE_TARE_READY);    
+    display.showMessage(MESSAGE_TARE_READY);
     setRunModeMeasure();
   }
   else
@@ -173,7 +252,8 @@ void tare()
 }
 void measure()
 {
-  if(modeSwitch) {
+  if (modeSwitch)
+  {
     display.showMessage(MESSAGE_SCALE_READY);
     modeSwitch = false;
   }
@@ -202,28 +282,29 @@ void measure()
   }
 }
 
-void runExperiments() {
-    // testing error display
-    // displayError.module = "DEBUG";
-    // displayError.msg = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
-    // display.showErrorMessage(displayError);
+void runExperiments()
+{
+  // testing error display
+  // displayError.module = "DEBUG";
+  // displayError.msg = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
+  // display.showErrorMessage(displayError);
 
-    // testing measurement display
-    //display.showMeasurement(displayData);
+  // testing measurement display
+  // display.showMeasurement(displayData);
 
-    // testing message display
-    //display.showMessage("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent non dolor a arcu malesuada luctus et et arcu.");
+  // testing message display
+  // display.showMessage("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent non dolor a arcu malesuada luctus et et arcu.");
 
-    // testing init display
-    //display.showInitMessage(); 
+  // testing init display
+  // display.showInitMessage();
 
-    //testing calibration display
-    //display.showCalibrationMessage(-10456);
+  // testing calibration display
+  // display.showCalibrationMessage(-10456);
 
-    //testing title display
-    display.showTitle(TITLE_CALIBRATION); //configuration should be the longest
+  // testing title display
+  display.showTitle(TITLE_CALIBRATION); // configuration should be the longest
 
-    delay(5000);
+  delay(5000);
 }
 
 void setup()
@@ -266,9 +347,9 @@ void loop()
     delay(5000);
     setRunModeMeasure();
     break;
-  case RunMode::Test:  
-    //This mode is used for testing and debugging various states. 
-    // just drop an "action": "test" on the topic to trigger your experiments here
+  case RunMode::Test:
+    // This mode is used for testing and debugging various states.
+    //  just drop an {"action": "test"} on the topic to trigger your experiments
     runExperiments();
     setRunModeMeasure();
     break;

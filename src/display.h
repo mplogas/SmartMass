@@ -26,8 +26,9 @@ public:
     };
     Display(uint16_t displayWidth, uint16_t displayHeight, int8_t resetPin, unsigned long screenTimeOut);
     bool init();
-    void showMeasurement(Data &data);
     void loop();
+    void setScreenTimeOut(unsigned long screenTimeOut); 
+    void showMeasurement(Data &data);
     void showInitMessage();
     void showErrorMessage(Error &error);
     void showMessage(const char *msg);

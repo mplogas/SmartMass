@@ -115,7 +115,11 @@ void Display::showMeasurement(Display::Data &data)
     lastUpdate = millis();
 }
 
-//initializes the display initializes and upon success shows the init display for 1.5s and then shows the ready screen
+void Display::setScreenTimeOut(unsigned long screenTimeOut) {
+    timeout = screenTimeOut;
+}
+
+
 bool Display::init()
 {
     bool result = pDevice->begin(SSD1306_SWITCHCAPVCC, 0x3C);
