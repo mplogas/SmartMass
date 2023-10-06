@@ -43,7 +43,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     }
     else if (strcmp(doc[ACTION_KEY], ACTION_CALIBRATE) == 0)
     {
-      currentMode = RunMode::Calibrate;
+      if(!doc.containsKey("result")) currentMode = RunMode::Calibrate;
     }
     else if (strcmp(doc[ACTION_KEY], ACTION_CONFIGURE) == 0)
     {
@@ -119,9 +119,9 @@ void initializeDevice()
 void calibrateDevice()
 {
   display.showTitle(TITLE_CALIBRATION);
-  delay(1000);
+  delay(1500);
   display.showMessage(MESSAGE_CALIBRATION_START);
-  delay(1000);
+  delay(2500);
   display.showMessage(MESSAGE_TARE_START);
   delay(5000);
   scale.calibrationStep01();
@@ -177,6 +177,7 @@ void measure()
     display.showMessage(MESSAGE_SCALE_READY);
     modeSwitch = false;
   }
+
   long previousRun = measurement.ts;
   unsigned long previousValue = measurement.result;
   scale.measure(measurement, config.loadcellMeasurementSampling);
