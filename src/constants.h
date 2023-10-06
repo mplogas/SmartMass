@@ -25,7 +25,7 @@ static const char *MESSAGE_CALIBRATION_RESULT = "calibration factor:";
 static const char *TITLE_INITIALIZE = "SmartMass";
 static const char *TITLE_ERROR = "Error";
 static const char *TITLE_MODULE = "Module: ";
-static const char *TITLE_CALIBRATION = "Calibratesmartmass";
+static const char *TITLE_CALIBRATION = "Calibrate";
 static const char *TITLE_CONFIGURATION = "Configure";
 static const char *TITLE_TARE = "Tare";
 
