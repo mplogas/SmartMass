@@ -18,7 +18,7 @@ public:
     struct Measurement
     {
         unsigned long ts;
-        unsigned long result;
+        long result;
     };
     Scale(uint8_t dOutPin, uint8_t sckPin);
     void init(long calibration);

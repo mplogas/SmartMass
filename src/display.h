@@ -17,7 +17,7 @@ public:
     struct Data
     {
         const char *title;
-        unsigned long result;
+        long result;
         const char *unit;
     };
     struct Error {
@@ -31,6 +31,7 @@ public:
     void showInitMessage();
     void showErrorMessage(Error &error);
     void showMessage(const char *msg);
+    void showTitle(const char *title);
     void showCalibrationMessage(long calibration);
 };
 

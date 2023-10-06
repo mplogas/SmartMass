@@ -7,17 +7,19 @@
 
 enum RunMode
 {
-    Initialize,
-    Calibrate,
-    Configure,
-    Tare,
-    Measure, 
-    Error
+  Initialize,
+  Calibrate,
+  Configure,
+  Tare,
+  Measure,
+  Error,
+  Test
 };
 
-struct Configuration {
-  
-  unsigned long displayTimeout; 
+struct Configuration
+{
+
+  unsigned long displayTimeout;
   long loadcellCalibration;
   unsigned long loadcellKnownWeight;
   unsigned long loadcellMeasurementIntervall;
@@ -25,48 +27,51 @@ struct Configuration {
 };
 Configuration config;
 
-
 RunMode currentMode = RunMode::Initialize;
-
+bool modeSwitch = true;
 
 void callback(char *topic, byte *payload, unsigned int length)
-{    
+{
   StaticJsonDocument<512> doc;
   ArduinoJson::V6213PB2::DeserializationError serializationResult = deserializeJson(doc, payload, length);
-  if(doc != NULL && doc.containsKey(ACTION_KEY)) {
-    
-    Serial.printf(doc[ACTION_KEY]);
-    if(strcmp(doc[ACTION_KEY], ACTION_TARE) == 0) {
+  if (doc != NULL && doc.containsKey(ACTION_KEY))
+  {
+
+    if (strcmp(doc[ACTION_KEY], ACTION_TARE) == 0)
+    {
       currentMode = RunMode::Tare;
     }
-    else if(strcmp(doc[ACTION_KEY], ACTION_CALIBRATE) == 0) {
+    else if (strcmp(doc[ACTION_KEY], ACTION_CALIBRATE) == 0)
+    {
       currentMode = RunMode::Calibrate;
     }
-    else if(strcmp(doc[ACTION_KEY], ACTION_CONFIGURE) == 0) {
-      //TODO: get config data from payload
+    else if (strcmp(doc[ACTION_KEY], ACTION_CONFIGURE) == 0)
+    {
+      // TODO: get config data from payload
       JsonObject scale = doc["scale"];
-      if(scale != NULL) {
-
+      if (scale != NULL)
+      {
       }
 
       JsonObject display = doc["display"];
-      if(display != NULL) {
+      if (display != NULL)
+      {
         unsigned long timeout = display["display_timeout"];
-        if(timeout != 0) config.displayTimeout = timeout;
+        if (timeout != 0)
+          config.displayTimeout = timeout;
       }
 
       currentMode = RunMode::Configure;
-      Serial.printf(doc[ACTION_KEY]);
     }
-    else if(strcmp(doc[ACTION_KEY], ACTION_TEST) == 0) {
-      currentMode = RunMode::Error;
-      Serial.printf(doc[ACTION_KEY]);
+    else if (strcmp(doc[ACTION_KEY], ACTION_TEST) == 0)
+    {
+      currentMode = RunMode::Test;
     }
-  } 
+  }
 };
 
 MqttClient mqttClient(WIFI_SSID, WIFI_PASSWORD, MQTT_BROKER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD, MQTT_CLIENTID, callback);
-const char *fullTopic;
+const String fullTopic = String(MQTT_TOPIC + MQTT_TOPIC_SEPARATOR + MQTT_CLIENTID);
 
 Display display(DISPLAY_WIDTH, DISPLAY_HEIGHT, DISPLAY_RESET_PIN, DISPLAY_TIMEOUT);
 Display::Data displayData;
@@ -75,7 +80,8 @@ Display::Error displayError;
 Scale scale(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
 Scale::Measurement measurement;
 
-void intializeConfiguration() {
+void intializeConfiguration()
+{
   config.displayTimeout = DISPLAY_TIMEOUT;
   config.loadcellCalibration = LOADCELL_CALIBRATION;
   config.loadcellKnownWeight = LOADCELL_KNOWN_WEIGHT;
@@ -83,22 +89,37 @@ void intializeConfiguration() {
   config.loadcellMeasurementSampling = LOADCELL_MEASUREMENT_SAMPLING;
 }
 
-void initializeDevice(){
-  display.showInitMessage();
-  delay(3000);
-  if(scale.isReady()) {
-    display.showMessage(MESSAGE_SCALE_READY);
-    currentMode = RunMode::Measure;
-  } else {
-    displayError.module = MODULE_SCALE;
-    displayError.msg = ERROR_SCALE_NOT_READY;
+void setRunModeMeasure() {
+  modeSwitch = true;
+  currentMode = RunMode::Measure;
+}
+
+void setRunModeError(const char *module, const char *msg) {
+    displayError.module = module;
+    displayError.msg = msg;
     display.showErrorMessage(displayError);
 
     currentMode = RunMode::Error;
+}
+void initializeDevice()
+{
+  display.showInitMessage();
+  delay(3000);
+  if (scale.isReady())
+  {
+    display.showMessage(MESSAGE_SCALE_READY);
+    setRunModeMeasure();
+  }
+  else
+  {
+    setRunModeError(MODULE_SCALE, ERROR_SCALE_NOT_READY);
   }
 }
 
-void calibrateDevice(){
+void calibrateDevice()
+{
+  display.showTitle(TITLE_CALIBRATION);
+  delay(1000);
   display.showMessage(MESSAGE_CALIBRATION_START);
   delay(1000);
   display.showMessage(MESSAGE_TARE_START);
@@ -108,41 +129,54 @@ void calibrateDevice(){
   delay(5000);
   long result = scale.calibrationStep02(config.loadcellKnownWeight);
   display.showCalibrationMessage(result);
-  
-  //config.loadcellCalibration = result;
-  
+
+  // TODO: writing calibration data immediately?
+  // config.loadcellCalibration = result;
+
   StaticJsonDocument<96> doc;
   char buffer[96];
   doc[ACTION_KEY] = "calibrate";
   doc["result"] = result;
   serializeJson(doc, buffer);
-  mqttClient.publish(fullTopic, buffer);
+  mqttClient.publish(fullTopic.c_str(), buffer);
 
   delay(5000);
-  currentMode = RunMode::Measure;
+  setRunModeMeasure();
 }
 
-void configureDevice(){
-  //reload and stuff
+void configureDevice()
+{
+  display.showTitle(TITLE_CONFIGURATION);
+  delay(1000);
+
+  // TODO: reload and stuff
+
   
-  currentMode = RunMode::Measure;
+  setRunModeMeasure();
 }
 
-void tare(){  
+void tare()
+{
+  display.showTitle(TITLE_TARE);
+  delay(1000);
   display.showMessage(MESSAGE_TARE_START);
   delay(1500);
-  if(scale.tare()) {
-    display.showMessage(MESSAGE_TARE_READY);
-    currentMode = RunMode::Measure;
-  } else {
-    displayError.module = MODULE_SCALE;
-    displayError.msg = ERROR_TARE_FAILED;
-    display.showErrorMessage(displayError);
-    
-    currentMode = RunMode::Error;
+  if (scale.tare())
+  {
+    display.showMessage(MESSAGE_TARE_READY);    
+    setRunModeMeasure();
+  }
+  else
+  {
+    setRunModeError(MODULE_SCALE, ERROR_TARE_FAILED);
   }
 }
-void measure(){
+void measure()
+{
+  if(modeSwitch) {
+    display.showMessage(MESSAGE_SCALE_READY);
+    modeSwitch = false;
+  }
   long previousRun = measurement.ts;
   unsigned long previousValue = measurement.result;
   scale.measure(measurement, config.loadcellMeasurementSampling);
@@ -154,6 +188,7 @@ void measure(){
     {
       display.showMeasurement(displayData);
 
+      // TODO: contract JSON object
       // https://arduinojson.org/v6/how-to/use-arduinojson-with-pubsubclient/
       StaticJsonDocument<32> doc;
       char buffer[32];
@@ -161,9 +196,33 @@ void measure(){
       doc["value"] = measurement.result;
       serializeJson(doc, buffer);
 
-      mqttClient.publish(fullTopic, buffer);
+      mqttClient.publish(fullTopic.c_str(), buffer);
     }
   }
+}
+
+void runExperiments() {
+    // testing error display
+    // displayError.module = "DEBUG";
+    // displayError.msg = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
+    // display.showErrorMessage(displayError);
+
+    // testing measurement display
+    //display.showMeasurement(displayData);
+
+    // testing message display
+    //display.showMessage("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent non dolor a arcu malesuada luctus et et arcu.");
+
+    // testing init display
+    //display.showInitMessage(); 
+
+    //testing calibration display
+    //display.showCalibrationMessage(-10456);
+
+    //testing title display
+    display.showTitle(TITLE_CALIBRATION); //configuration should be the longest
+
+    delay(5000);
 }
 
 void setup()
@@ -179,36 +238,38 @@ void setup()
   scale.init(config.loadcellCalibration, config.loadcellMeasurementIntervall);
   measurement.ts = millis();
 
-  fullTopic = String(MQTT_TOPIC + MQTT_TOPIC_SEPARATOR + MQTT_CLIENTID).c_str();
   mqttClient.init();
-  mqttClient.subscribe(fullTopic);
+  mqttClient.subscribe(fullTopic.c_str());
 }
 
 void loop()
-{           
+{
   switch (currentMode)
-  {  
+  {
   case RunMode::Initialize:
     initializeDevice();
-    break;  
+    break;
   case RunMode::Calibrate:
     calibrateDevice();
-    break;  
+    break;
   case RunMode::Configure:
     configureDevice();
-    break;  
+    break;
   case RunMode::Tare:
     tare();
     break;
   case RunMode::Error:
-    //TODO: error recovery, maybe re-init? 
+    // TODO: error recovery, maybe re-init?
 
-    // for now
-    displayError.module = "DEBUG";
-    displayError.msg = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
-    display.showErrorMessage(displayError);
+    // for now:
     delay(5000);
-    currentMode = RunMode::Measure;
+    setRunModeMeasure();
+    break;
+  case RunMode::Test:  
+    //This mode is used for testing and debugging various states. 
+    // just drop an "action": "test" on the topic to trigger your experiments here
+    runExperiments();
+    setRunModeMeasure();
     break;
   case RunMode::Measure:
   default:

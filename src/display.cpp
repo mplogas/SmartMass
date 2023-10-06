@@ -18,10 +18,11 @@ void Display::showInitMessage()
 
     pDevice->clearDisplay();
     pDevice->setTextColor(WHITE);
-    pDevice->setTextSize(1);
-    pDevice->setCursor(0, 20);
+    pDevice->setTextSize(2);
+    pDevice->setCursor(7, 10);
     pDevice->println(TITLE_INITIALIZE);
-    pDevice->setCursor(0, 30);
+    pDevice->setTextSize(1);
+    pDevice->setCursor(10, 30);
     pDevice->println(MESSAGE_INITIALIZE);
     pDevice->display();
 
@@ -37,12 +38,26 @@ void Display::showErrorMessage(Display::Error &error)
     pDevice->setTextSize(2);
     pDevice->setCursor(40, 3);
     pDevice->println(TITLE_ERROR);
-    pDevice->setCursor(30, 20);    
+    pDevice->setCursor(25, 20);    
     pDevice->setTextSize(1);
     pDevice->printf(TITLE_MODULE);
     pDevice->print(error.module);    
     pDevice->setCursor(0, 35);    
     pDevice->println(error.msg);
+    pDevice->display();
+
+    lastUpdate = millis();
+}
+
+void Display::showTitle(const char *title)
+{
+    displayStandby = false;
+
+    pDevice->clearDisplay();
+    pDevice->setTextColor(WHITE);
+    pDevice->setTextSize(2);
+    pDevice->setCursor(2, 28);
+    pDevice->println(title);
     pDevice->display();
 
     lastUpdate = millis();
@@ -63,17 +78,38 @@ void Display::showMessage(const char *msg)
 void Display::showCalibrationMessage(long calibration)
 {
     displayStandby = false;
+    
+    pDevice->clearDisplay();
+    // text
+    pDevice->setTextSize(1);
+    pDevice->setCursor(10, 18);
+    pDevice->println(MESSAGE_CALIBRATION_READY);
+    pDevice->setCursor(10, 27);
+    pDevice->println(MESSAGE_CALIBRATION_RESULT);
+    // result
+    pDevice->setTextSize(2);
+    pDevice->setCursor(15, 38);
+    pDevice->print(calibration);
+    pDevice->display();
+    lastUpdate = millis();
+}
+
+void Display::showMeasurement(Display::Data &data)
+{
+    displayStandby = false;
 
     pDevice->clearDisplay();
-    pDevice->setTextColor(WHITE);
+    // title
     pDevice->setTextSize(1);
-    pDevice->setCursor(0, 5);
-    pDevice->println(TITLE_CALIBRATION);
-    pDevice->setCursor(0, 15);
-    pDevice->println(MESSAGE_CALIBRATION_READY);
+    pDevice->setTextColor(WHITE);
+    pDevice->setCursor(10, 27);
+    pDevice->println(data.title);
+    // result & unit
     pDevice->setTextSize(2);
-    pDevice->setCursor(10, 28);
-    pDevice->println(calibration);
+    pDevice->setCursor(10, 38);
+    pDevice->print(data.result);
+    pDevice->setCursor(100, 38);
+    pDevice->print(data.unit);
     pDevice->display();
 
     lastUpdate = millis();
@@ -92,43 +128,12 @@ bool Display::init()
     return result;
 }
 
-void Display::showMeasurement(Display::Data &data)
-{
-    displayStandby = false;
-
-    pDevice->clearDisplay();
-    // title
-    pDevice->setTextSize(1);
-    pDevice->setTextColor(WHITE);
-    pDevice->setCursor(0, 10);
-    pDevice->println(data.title);
-    // result & unit
-    pDevice->setCursor(0, 30);
-    pDevice->setTextSize(2);
-    pDevice->print(data.result);
-    pDevice->print(" ");
-    pDevice->print(data.unit);
-    pDevice->display();
-
-    lastUpdate = millis();
-}
-
 void Display::loop()
 {
     unsigned long current = millis();
 
     if ((current - lastUpdate >= timeout) && !displayStandby)
     {
-        // Serial.print(current);
-        // Serial.printf(" - ");
-        // Serial.print(lastUpdate);
-        // Serial.printf(" = ");
-        // Serial.print(current - lastUpdate);
-        // Serial.printf(" (");
-        // Serial.print(timeout);
-        // Serial.printf(")");
-        // Serial.println();
-
         clearDisplay();
         lastUpdate = current;
         displayStandby = true;
