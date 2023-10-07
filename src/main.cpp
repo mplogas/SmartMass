@@ -3,6 +3,7 @@
 #include "mqttclient.h"
 #include "display.h"
 #include "scale.h"
+#include "rfid.h"
 #include <ArduinoJson.h>
 
 enum RunMode
@@ -145,6 +146,11 @@ Display::Error displayError;
 
 Scale scale(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
 Scale::Measurement measurement;
+
+
+const uint8_t RST_PIN = 15;          // Configurable, see typical pin layout above
+const uint8_t SS_PIN = 5;         // Configurable, see typical pin layout above
+RFID rfid(SS_PIN,RST_PIN);
 
 void intializeConfiguration()
 {
@@ -302,7 +308,8 @@ void runExperiments()
   // display.showCalibrationMessage(-10456);
 
   // testing title display
-  display.showTitle(TITLE_CALIBRATION); // configuration should be the longest
+  // display.showTitle(TITLE_CALIBRATION); // configuration should be the longest
+
 
   delay(5000);
 }
@@ -322,6 +329,8 @@ void setup()
 
   mqttClient.init();
   mqttClient.subscribe(fullTopic.c_str());
+
+  rfid.init();
 }
 
 void loop()
@@ -359,6 +368,8 @@ void loop()
     break;
   }
 
+  rfid.loop();
   mqttClient.loop();
   display.loop();
+
 }
