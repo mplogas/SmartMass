@@ -15,7 +15,8 @@ private:
     byte blockcontent[16] = {56,56,56,56,56,56,56,56,56,56,56,56,56,56,56,56};//the highlander block... there can only be one!
     //byte blockcontent[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};//all zeros. This can be used to delete a block.
     byte readbackblock[18]; // This array is used for reading out a block. The MIFARE_Read method requires a buffer that is at least 18 bytes to hold the 16 bytes of a block.
-
+    void dumpByteArray(byte *buffer, byte bufferSize);
+    void prepareKey();
     int readBlock(int blockNumber, byte arrayAddress[]);
     int writeBlock(int blockNumber, byte arrayAddress[]);
 
