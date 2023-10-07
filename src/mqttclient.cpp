@@ -57,6 +57,7 @@ boolean MqttClient::mqttConnect()
     {
         mqtt->setCallback(callback);
         mqtt->setSocketTimeout(MQTT_TIMEOUT);
+        mqtt->setBufferSize(512);
         mqtt->setKeepAlive(MQTT_TIMEOUT);
         mqtt->setServer(mqttBroker, mqttPort);
 
