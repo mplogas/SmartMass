@@ -21,10 +21,14 @@ private:
     int writeBlock(int blockNumber, byte arrayAddress[]);
 
 public:
+    struct TagData {
+        byte spoolId[16];
+        byte spoolWeight[16];        
+    };
     RFID(uint8_t chipselectPin, uint8_t resetPin);
     void init();
     void loop();
-    void write();
+    void write(TagData &data);
     void read();
 };
 
