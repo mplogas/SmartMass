@@ -20,6 +20,9 @@ static const char *MESSAGE_CALIBRATION_START = "Calibration started.";
 static const char *MESSAGE_CALIBRATION_KNOWN_WEIGHT = "Done. Place a known weight on the scale.";
 static const char *MESSAGE_CALIBRATION_READY = "Calibration done.";
 static const char *MESSAGE_CALIBRATION_RESULT = "calibration factor:";
+static const char *MESSAGE_WRITETAG_START = "Hold a tag close to the reader.";
+
+
 
 // Titles
 static const char *TITLE_INITIALIZE = "SmartMass";
@@ -28,6 +31,7 @@ static const char *TITLE_MODULE = "Module: ";
 static const char *TITLE_CALIBRATION = "Calibrate";
 static const char *TITLE_CONFIGURATION = "Configure";
 static const char *TITLE_TARE = "Tare";
+static const char *TITLE_WRITETAG = "Write Tag";
 
 // error
 static const char *ERROR_TARE_FAILED = "Taring failed. Check serial.";
@@ -39,5 +43,8 @@ static const char *ACTION_TARE = "tare";
 static const char *ACTION_CALIBRATE = "calibrate";
 static const char *ACTION_CONFIGURE = "configure";
 static const char *ACTION_TEST = "test";
+static const char *ACTION_WRITETAG = "write-tag";
+
+
 
 #endif

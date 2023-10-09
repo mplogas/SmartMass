@@ -24,6 +24,14 @@ void RFID::prepareKey(byte authKey[6]) {
     dumpByteArray(key.keyByte, MFRC522::MF_KEY_SIZE);
 }
 
+byte *RFID::longToByte(long & longVal) {
+  return (byte*)&longVal;
+}
+
+long RFID::byteToLong(byte * byteVal) {
+  return *((long *)byteVal);
+}
+
 void RFID::init() {
     prepareKey();
     SPI.begin();
@@ -36,7 +44,8 @@ void RFID::init(byte authKey[6]) {
     pMfrc522->PCD_Init();
 }
 
-void RFID::write(RFID::TagData &data) {
+void RFID::write(RFID::TagData tagData) {
+    writeData = tagData;
     IsWrite = true;
 }
 void RFID::read() {
@@ -51,8 +60,8 @@ void RFID::loop() {
     if (piccType != MFRC522::PICC_TYPE_MIFARE_MINI && piccType != MFRC522::PICC_TYPE_MIFARE_1K && piccType != MFRC522::PICC_TYPE_MIFARE_4K) return;
     Serial.println(F("tag found."));
 
-    // if(IsWrite) writeTag();
-    // else readTag();
+    if(IsWrite) writeTag();
+    else readTag();
 
 
     // Halt PICC & top encryption on PCD
@@ -62,10 +71,10 @@ void RFID::loop() {
 
 
 void RFID::readTag() {
-    if(!pMfrc522->PICC_IsNewCardPresent()) return;
-    if(!pMfrc522->PICC_ReadCardSerial()) return;
-    MFRC522::PICC_Type piccType = pMfrc522->PICC_GetType(pMfrc522->uid.sak);
-    if (piccType != MFRC522::PICC_TYPE_MIFARE_MINI && piccType != MFRC522::PICC_TYPE_MIFARE_1K && piccType != MFRC522::PICC_TYPE_MIFARE_4K) return;
+    // if(!pMfrc522->PICC_IsNewCardPresent()) return;
+    // if(!pMfrc522->PICC_ReadCardSerial()) return;
+    // MFRC522::PICC_Type piccType = pMfrc522->PICC_GetType(pMfrc522->uid.sak);
+    // if (piccType != MFRC522::PICC_TYPE_MIFARE_MINI && piccType != MFRC522::PICC_TYPE_MIFARE_1K && piccType != MFRC522::PICC_TYPE_MIFARE_4K) return;
 
     Serial.println(F("tag for reading found."));
     //looking for spoolid and weight first
@@ -103,18 +112,19 @@ void RFID::readTag() {
     pMfrc522->PICC_DumpMifareClassicSectorToSerial(&(pMfrc522->uid), &key, sector);
     Serial.println();
 
-    // Halt PICC
-    pMfrc522->PICC_HaltA();
-    // Stop encryption on PCD
-    pMfrc522->PCD_StopCrypto1();
+    // // Halt PICC
+    // pMfrc522->PICC_HaltA();
+    // // Stop encryption on PCD
+    // pMfrc522->PCD_StopCrypto1();
 }
-void RFID::writeTag(TagData &data) {
-    if(!pMfrc522->PICC_IsNewCardPresent()) return;
-    if(!pMfrc522->PICC_ReadCardSerial()) return;
-    MFRC522::PICC_Type piccType = pMfrc522->PICC_GetType(pMfrc522->uid.sak);
-    if (piccType != MFRC522::PICC_TYPE_MIFARE_MINI && piccType != MFRC522::PICC_TYPE_MIFARE_1K && piccType != MFRC522::PICC_TYPE_MIFARE_4K) return;
+void RFID::writeTag() {
+    // if(!pMfrc522->PICC_IsNewCardPresent()) return;
+    // if(!pMfrc522->PICC_ReadCardSerial()) return;
+    // MFRC522::PICC_Type piccType = pMfrc522->PICC_GetType(pMfrc522->uid.sak);
+    // if (piccType != MFRC522::PICC_TYPE_MIFARE_MINI && piccType != MFRC522::PICC_TYPE_MIFARE_1K && piccType != MFRC522::PICC_TYPE_MIFARE_4K) return;
 
-    Serial.println(F("tag for writing found."));
+    //Serial.println(F("tag for writing found."));
+
     //looking for spoolid and weight first
     byte sector = 0;
     byte spoolIdBlock = 1;
@@ -128,13 +138,13 @@ void RFID::writeTag(TagData &data) {
         return;
     }  
 
-    status = (MFRC522::StatusCode) pMfrc522->MIFARE_Write(spoolIdBlock, data.spoolId, 16);
+    status = (MFRC522::StatusCode) pMfrc522->MIFARE_Write(spoolIdBlock, longToByte(writeData.spoolId), 16);
     if (status != MFRC522::STATUS_OK) {
         Serial.println(F("Writing SpoolId failed"));
     } 
     Serial.println(F("Writing SpoolId success"));
 
-    status = (MFRC522::StatusCode) pMfrc522->MIFARE_Write(spoolWeightBlock, data.spoolWeight, 16);
+    status = (MFRC522::StatusCode) pMfrc522->MIFARE_Write(spoolWeightBlock, longToByte(writeData.spoolWeight), 16);
     if (status != MFRC522::STATUS_OK) {
         Serial.println(F("Writing spool weight failed"));
     } 
@@ -145,8 +155,5 @@ void RFID::writeTag(TagData &data) {
     pMfrc522->PICC_DumpMifareClassicSectorToSerial(&(pMfrc522->uid), &key, sector);
     Serial.println();
 
-    // Halt PICC
-    pMfrc522->PICC_HaltA();
-    pMfrc522->PCD_StopCrypto1();
     IsWrite = false;
 }

@@ -13,6 +13,7 @@ enum RunMode
   Configure,
   Tare,
   Measure,
+  WriteTag,
   Error,
   Test
 };
@@ -30,6 +31,7 @@ Configuration config;
 
 RunMode currentMode = RunMode::Initialize;
 bool modeSwitch = true;
+
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
@@ -55,58 +57,30 @@ void callback(char *topic, byte *payload, unsigned int length)
     {
       
       Serial.println("configure action started");
-      JsonObject scale = doc["scale"];
-      if (scale != NULL)
+      JsonObject scaleJson = doc["scale"];
+      if (scaleJson != NULL)
       {
-        Serial.println("scale object found");
         // instead of using containsKey() and accessing the value via key, we save ONE key lookup by using ArduinoJSONs default values.
-        long loadcellCalibration = scale["calibration"];
-        unsigned long loadcellKnownWeight = scale["known_weight"];
-        unsigned long loadcellMeasurementIntervall = scale["update_interval"];
-        uint8_t loadcellMeasurementSampling = scale["sampling_size"];
-
-        //NOTE: late night note - it seems the default configuration payload is too large, so either send scale or display. 
-        // or i find a way to compress/protobuf the payload.
+        long loadcellCalibration = scaleJson["calibration"];
+        unsigned long loadcellKnownWeight = scaleJson["known_weight"];
+        unsigned long loadcellMeasurementIntervall = scaleJson["update_interval"];
+        uint8_t loadcellMeasurementSampling = scaleJson["sampling_size"];
 
         if (loadcellCalibration != 0)
         {
-          Serial.printf("loadcell calibration read: ");
-          Serial.print(config.loadcellCalibration);
-          Serial.println();
           config.loadcellCalibration = loadcellCalibration;
-          Serial.printf("loadcell calibration write: ");
-          Serial.print(config.loadcellCalibration);
-          Serial.println();
         }
         if (loadcellKnownWeight != 0)
         {
-          Serial.printf("loadcell known weight read: ");
-          Serial.print(config.loadcellKnownWeight);
-          Serial.println();
           config.loadcellKnownWeight = loadcellKnownWeight;
-          Serial.printf("loadcell known weight write: ");
-          Serial.print(config.loadcellKnownWeight);
-          Serial.println();
         }
         if (loadcellMeasurementIntervall != 0)
         {
-          Serial.printf("loadcell measurement intervall read: ");
-          Serial.print(config.loadcellMeasurementIntervall);
-          Serial.println();
           config.loadcellMeasurementIntervall = loadcellMeasurementIntervall;
-          Serial.printf("loadcell measurement intervall write: ");
-          Serial.print(config.loadcellMeasurementIntervall);
-          Serial.println();
         }
         if (loadcellMeasurementSampling != 0)
         {          
-          Serial.printf("loadcell measurement sampling read: ");
-          Serial.print(config.loadcellMeasurementSampling);
-          Serial.println();
-          config.loadcellMeasurementSampling = loadcellMeasurementSampling;          
-          Serial.printf("loadcell measurement sampling write: ");
-          Serial.print(config.loadcellMeasurementSampling);
-          Serial.println();
+          config.loadcellMeasurementSampling = loadcellMeasurementSampling;        
         }
       }
 
@@ -118,17 +92,28 @@ void callback(char *topic, byte *payload, unsigned int length)
         // if (timeout != 0) config.displayTimeout = timeout;
         if (display.containsKey("display_timeout"))
         {
-          Serial.printf("display timeout read: ");
-          Serial.print(config.displayTimeout);
-          Serial.println();
           config.displayTimeout = display["display_timeout"];
-          Serial.printf("display timeout read: ");
-          Serial.print(config.displayTimeout);
-          Serial.println();
         }
       }
 
       currentMode = RunMode::Configure;
+    }
+    else if (strcmp(doc[ACTION_KEY], ACTION_WRITETAG) == 0)
+    {
+      Serial.println("configure action started");
+      JsonObject tagJson = doc["tag"];
+      if (tagJson != NULL)
+      {
+        unsigned long spoolId = tagJson["spool_id"]; //TODO: GUID/byte[16]?
+        unsigned long spoolWeight = tagJson["spool_weight"];
+
+        if (spoolId == 0) return; //early exit because we need a spool id from the backend
+        else {        }
+
+        //TODO: SpoolWeight
+      }
+
+      currentMode = RunMode::WriteTag;
     }
     else if (strcmp(doc[ACTION_KEY], ACTION_TEST) == 0)
     {
@@ -151,6 +136,7 @@ Scale::Measurement measurement;
 const uint8_t RST_PIN = 15;          // Configurable, see typical pin layout above
 const uint8_t SS_PIN = 5;         // Configurable, see typical pin layout above
 RFID rfid(SS_PIN,RST_PIN);
+RFID::TagData tag;
 
 void intializeConfiguration()
 {
@@ -256,6 +242,15 @@ void tare()
     setRunModeError(MODULE_SCALE, ERROR_TARE_FAILED);
   }
 }
+
+void writeTag() {
+  display.showTitle(TITLE_WRITETAG);
+  delay(1000);
+  display.showMessage(MESSAGE_WRITETAG_START);
+  delay(1500);
+  rfid.write(tag);
+}
+
 void measure()
 {
   if (modeSwitch)
@@ -310,7 +305,6 @@ void runExperiments()
   // testing title display
   // display.showTitle(TITLE_CALIBRATION); // configuration should be the longest
 
-
   delay(5000);
 }
 
@@ -348,6 +342,9 @@ void loop()
     break;
   case RunMode::Tare:
     tare();
+    break;
+  case RunMode::WriteTag:
+    writeTag();
     break;
   case RunMode::Error:
     // TODO: error recovery, maybe re-init?
