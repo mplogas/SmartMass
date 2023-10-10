@@ -32,12 +32,22 @@ Configuration config;
 RunMode currentMode = RunMode::Initialize;
 bool modeSwitch = true;
 
+Display display(DISPLAY_WIDTH, DISPLAY_HEIGHT, DISPLAY_RESET_PIN, DISPLAY_TIMEOUT);
+Display::Data displayData;
+Display::Error displayError;
+
+Scale scale(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
+Scale::Measurement measurement;
+
+RFID rfid(RFID_SS_PIN, RFID_RST_PIN);
+RFID::TagData tag;
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
   StaticJsonDocument<512> doc;
   ArduinoJson::V6213PB2::DeserializationError serializationResult = deserializeJson(doc, payload, length);
-  if (serializationResult) {
+  if (serializationResult)
+  {
     Serial.println("serialization failed.");
   }
 
@@ -55,8 +65,6 @@ void callback(char *topic, byte *payload, unsigned int length)
     }
     else if (strcmp(doc[ACTION_KEY], ACTION_CONFIGURE) == 0)
     {
-      
-      Serial.println("configure action started");
       JsonObject scaleJson = doc["scale"];
       if (scaleJson != NULL)
       {
@@ -79,8 +87,8 @@ void callback(char *topic, byte *payload, unsigned int length)
           config.loadcellMeasurementIntervall = loadcellMeasurementIntervall;
         }
         if (loadcellMeasurementSampling != 0)
-        {          
-          config.loadcellMeasurementSampling = loadcellMeasurementSampling;        
+        {
+          config.loadcellMeasurementSampling = loadcellMeasurementSampling;
         }
       }
 
@@ -100,17 +108,26 @@ void callback(char *topic, byte *payload, unsigned int length)
     }
     else if (strcmp(doc[ACTION_KEY], ACTION_WRITETAG) == 0)
     {
-      Serial.println("configure action started");
+      Serial.println("write-tag action started");
       JsonObject tagJson = doc["tag"];
       if (tagJson != NULL)
       {
-        unsigned long spoolId = tagJson["spool_id"]; //TODO: GUID/byte[16]?
+        unsigned long spoolId = tagJson["spool_id"]; // TODO: GUID/byte[16]?
         unsigned long spoolWeight = tagJson["spool_weight"];
 
-        if (spoolId == 0) return; //early exit because we need a spool id from the backend
-        else {        }
+        Serial.printf("SpoolId: ");
+        Serial.print(spoolId);
+        Serial.println();
 
-        //TODO: SpoolWeight
+        if (spoolId == 0)
+          return; // early exit because we need a spool id from the backend
+        else
+        {
+          tag.spoolId = spoolId;
+        }
+
+        if (spoolWeight != 0)
+          tag.spoolWeight = spoolWeight;
       }
 
       currentMode = RunMode::WriteTag;
@@ -124,19 +141,6 @@ void callback(char *topic, byte *payload, unsigned int length)
 
 MqttClient mqttClient(WIFI_SSID, WIFI_PASSWORD, MQTT_BROKER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD, MQTT_CLIENTID, callback);
 const String fullTopic = String(MQTT_TOPIC + MQTT_TOPIC_SEPARATOR + MQTT_CLIENTID);
-
-Display display(DISPLAY_WIDTH, DISPLAY_HEIGHT, DISPLAY_RESET_PIN, DISPLAY_TIMEOUT);
-Display::Data displayData;
-Display::Error displayError;
-
-Scale scale(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
-Scale::Measurement measurement;
-
-
-const uint8_t RST_PIN = 15;          // Configurable, see typical pin layout above
-const uint8_t SS_PIN = 5;         // Configurable, see typical pin layout above
-RFID rfid(SS_PIN,RST_PIN);
-RFID::TagData tag;
 
 void intializeConfiguration()
 {
@@ -211,7 +215,6 @@ void configureDevice()
 
   display.setScreenTimeOut(config.displayTimeout);
 
-  
   Serial.printf("loadcell calibration: ");
   Serial.print(config.loadcellCalibration);
   Serial.println();
@@ -243,12 +246,21 @@ void tare()
   }
 }
 
-void writeTag() {
+void writeTag()
+{
   display.showTitle(TITLE_WRITETAG);
-  delay(1000);
-  display.showMessage(MESSAGE_WRITETAG_START);
   delay(1500);
-  rfid.write(tag);
+  display.showMessage(MESSAGE_WRITETAG_START);
+  delay(5000);
+  if(rfid.write(tag)) {
+    display.showMessage(MESSAGE_WRITETAG_READY);
+    setRunModeMeasure();
+  }
+  else
+  {
+    setRunModeError(MODULE_RFID, ERROR_TAGWRITE_FAILED);
+  }
+
 }
 
 void measure()
@@ -329,6 +341,7 @@ void setup()
 
 void loop()
 {
+
   switch (currentMode)
   {
   case RunMode::Initialize:
@@ -344,6 +357,7 @@ void loop()
     tare();
     break;
   case RunMode::WriteTag:
+    Serial.println("write tag loop");
     writeTag();
     break;
   case RunMode::Error:
@@ -365,8 +379,7 @@ void loop()
     break;
   }
 
-  rfid.loop();
   mqttClient.loop();
   display.loop();
-
+  rfid.loop();
 }

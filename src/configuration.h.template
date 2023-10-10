@@ -30,6 +30,8 @@ const long LOADCELL_KNOWN_WEIGHT = 100.0;
 const unsigned long LOADCELL_MEASUREMENT_INTERVAL = 500; //if you get 'HX711 not ready for measuring' sampling size is too high for measurment interval
 const uint8_t LOADCELL_MEASUREMENT_SAMPLING = 1; 
 
-
+// RFID
+const uint8_t RFID_RST_PIN = 15;          
+const uint8_t RFID_SS_PIN = 5;
 
 #endif
