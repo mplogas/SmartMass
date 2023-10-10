@@ -20,7 +20,7 @@ void RFID::prepareKey()
     {
         key.keyByte[i] = 0xFF;
     }
-    dumpByteArray(key.keyByte, MFRC522::MF_KEY_SIZE);
+    //dumpByteArray(key.keyByte, MFRC522::MF_KEY_SIZE);
 }
 void RFID::prepareKey(byte authKey[6])
 {
@@ -28,7 +28,7 @@ void RFID::prepareKey(byte authKey[6])
     {
         key.keyByte[i] = authKey[i];
     }
-    dumpByteArray(key.keyByte, MFRC522::MF_KEY_SIZE);
+    //dumpByteArray(key.keyByte, MFRC522::MF_KEY_SIZE);
 }
 
 byte *RFID::longToByte(long &longVal)
@@ -153,9 +153,9 @@ bool RFID::writeTag(TagData &tagData)
     Serial.println(F("Writing spool weight success"));
 
     // Dump the sector data
-    Serial.println(F("Current data in sector:"));
-    pMfrc522->PICC_DumpMifareClassicSectorToSerial(&(pMfrc522->uid), &key, sector);
-    Serial.println();
+    // Serial.println(F("Current data in sector:"));
+    // pMfrc522->PICC_DumpMifareClassicSectorToSerial(&(pMfrc522->uid), &key, sector);
+    // Serial.println();
 
     closeTag();
     return true;
