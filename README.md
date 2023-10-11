@@ -7,9 +7,9 @@
 
 #### Motivation
 
-The almighty YT algorithm suggested a 3D filament weighing solution to me recently, and as I have quite a few "almost empty" filament spools laying around I reached out to the maker. Unfortunately, no part of the suggested solution was open or free so I decided to build my own solution. From a simple local solution with a tiny OLED display, the scope quickly escalated with useful features such as MQTT read/write or RFID read/write.
+The almighty YT algorithm suggested a 3D filament weighing solution to me recently, and as I have quite a few "almost empty" filament spools laying around I reached out to the maker. Unfortunately, no part of the suggested solution was open source so I decided to start my own open source solution. From a simple local solution with a tiny OLED display, the scope quickly escalated with (useful?) features such as MQTT read/write or RFID read/write. The planned feature list can be found on the projects page. 
 
-As of now, the SmartMass device connects to an MQTT broker via WiFi and posts events to the ```smartmass/<deviceid>``` topic. The scale can be configured, calibrated and tared via MQTT using the documented payload in `./payload`. It aslso supports reading (and writing) filament spool metadata on Mifare 1K S50 tags (they're available as stickers!) with an RFID-RC522 module.
+As of now, the SmartMass device connects to an MQTT broker via WiFi and posts events to the ```smartmass/<deviceid>``` topic. The scale can be configured, calibrated and tared via MQTT using the documented payload in the `./payload` folder. It also supports reading (and writing) filament spool metadata on Mifare 1K S50 tags (they're available as stickers!) with an RFID-RC522 module.
 
 #### BOM (bill of materials)
 
