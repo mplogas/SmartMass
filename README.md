@@ -3,25 +3,31 @@
 
 ### A smart weighing solution for almost anything, but FDM filament spools in particular. 
 
+*pre-release quick project overview*
+
 #### Motivation
 
-Recently, I saw on YouTube a video of someone using a filament scale connected to a filament management system and got excited. I do print a lot, but I don't have the need for a proper filament management system yet. Still I wondered more than once if there's enough filament on a left-over spool for a print and I often just use a new spool.
+The almighty YT algorithm suggested a 3D filament weighing solution to me recently, and as I have quite a few "almost empty" filament spools laying around I reached out to the maker. Unfortunately, no part of the suggested solution was open or free so I decided to build my own solution. From a simple local solution with a tiny OLED display, the scope quickly escalated with useful features such as MQTT read/write or RFID read/write.
 
-So I went to this creators Discord, hoping to get a BOM, some code and STLs to build my own scale. Unfortunately, he wasn't sharing STLs or code so I decided to build my own filament scale based on an ESP32, with OLED display, WiFi, MQTT and whatnot - how hard could it be for an IoT SME?
+As of now, the SmartMass device connects to an MQTT broker via WiFi and posts events to the ```smartmass/<deviceid>``` topic. The scale can be configured, calibrated and tared via MQTT using the documented payload in `./payload`. It aslso supports reading (and writing) filament spool metadata on Mifare 1K S50 tags (they're available as stickers!) with an RFID-RC522 module.
 
 #### BOM (bill of materials)
 
 - a 2kg / 3kg load cell
 - an HX711 signal ampifier
 - an 0.96" 128x64 OLED display
+- an RFID-RC522 module
 - an ESP32-WROOM / ESP8266
 - PLA / PETG / ... to print the models
 
 #### Getting started
 
+**Broker**
+1. Set up an MQTT broker (mosquitto, emqx, hive, ...) and create a user for the device
+
 **Hardware**
-1. Assemble the model
-2. solder 
+
+*TODO* 
 
 **Code:**
 1. Open the project with platformio, I'm using the platformio plugin in VSCode.
