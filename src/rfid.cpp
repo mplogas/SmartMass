@@ -41,21 +41,23 @@ long RFID::byteToLong(byte *byteVal)
     return *((long *)byteVal);
 }
 
-void RFID::init()
+void RFID::init(rfidCallback rfidCb)
 {
     prepareKey();
     SPI.begin();
     pMfrc522->PCD_Init();
+    callback = rfidCb;
 }
 
-void RFID::init(byte authKey[6])
+void RFID::init(byte authKey[6], rfidCallback rfidCb)
 {
     prepareKey(authKey);
     SPI.begin();
     pMfrc522->PCD_Init();
+    callback = rfidCb;
 }
 
-bool RFID::write(RFID::TagData &tagData)
+bool RFID::write(TagData &tagData)
 {
     bool result = writeTag(tagData);
     if (result)
@@ -93,7 +95,10 @@ void RFID::readTag()
     if (status != MFRC522::STATUS_OK)
     {
         Serial.println(F("Reading spoolid failed."));
+        return; // early exit w/o spoolid
     }
+    TagData td;    
+    td.spoolId = byteToLong(buffer);
     Serial.println(F("SpoolId:"));
     dumpByteArray(buffer, 16);
     Serial.println();
@@ -103,15 +108,17 @@ void RFID::readTag()
     {
         Serial.println(F("Reading spool weight failed."));
     }
+    td.spoolWeight = byteToLong(buffer);
     Serial.println(F("spool weight:"));
     dumpByteArray(buffer, 16);
     Serial.println();
 
     // Dump the sector data
-    Serial.println(F("Current data in sector:"));
-    pMfrc522->PICC_DumpMifareClassicSectorToSerial(&(pMfrc522->uid), &key, sector);
-    Serial.println();
+    // Serial.println(F("Current data in sector:"));
+    // pMfrc522->PICC_DumpMifareClassicSectorToSerial(&(pMfrc522->uid), &key, sector);
+    // Serial.println();
 
+    callback(td);
     closeTag();
 }
 bool RFID::writeTag(TagData &tagData)

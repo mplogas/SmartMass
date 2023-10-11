@@ -40,9 +40,9 @@ Scale scale(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
 Scale::Measurement measurement;
 
 RFID rfid(RFID_SS_PIN, RFID_RST_PIN);
-RFID::TagData tag;
+TagData tag;
 
-void callback(char *topic, byte *payload, unsigned int length)
+void mqttCb(char *topic, byte *payload, unsigned int length)
 {
   StaticJsonDocument<512> doc;
   ArduinoJson::V6213PB2::DeserializationError serializationResult = deserializeJson(doc, payload, length);
@@ -139,7 +139,18 @@ void callback(char *topic, byte *payload, unsigned int length)
   }
 };
 
-MqttClient mqttClient(WIFI_SSID, WIFI_PASSWORD, MQTT_BROKER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD, MQTT_CLIENTID, callback);
+void rfidCb(TagData &data){
+  Serial.println("CB Tagdata");
+  Serial.printf("SpoolId");
+  Serial.print(data.spoolId);
+  Serial.println();
+  Serial.printf("Spool Weight");
+  Serial.print(data.spoolWeight);
+  Serial.println();
+}
+
+
+MqttClient mqttClient(WIFI_SSID, WIFI_PASSWORD, MQTT_BROKER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD, MQTT_CLIENTID, mqttCb);
 const String fullTopic = String(MQTT_TOPIC + MQTT_TOPIC_SEPARATOR + MQTT_CLIENTID);
 
 void intializeConfiguration()
@@ -336,7 +347,7 @@ void setup()
   mqttClient.init();
   mqttClient.subscribe(fullTopic.c_str());
 
-  rfid.init();
+  rfid.init(rfidCb);
 }
 
 void loop()
