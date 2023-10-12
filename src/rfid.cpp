@@ -33,12 +33,23 @@ void RFID::prepareKey(byte authKey[6])
 
 byte *RFID::longToByte(long &longVal)
 {
-    return (byte *)&longVal;
+    Serial.printf("long to byte - long: ");
+    Serial.print(longVal);
+    Serial.println();
+    byte *result = (byte *)&longVal;
+    dumpByteArray(result, 16);
+    return result;
 }
 
 long RFID::byteToLong(byte *byteVal)
 {
-    return *((long *)byteVal);
+    Serial.printf("long to byte - byte: ");
+    dumpByteArray(byteVal, 16);
+    long result = *((long *)byteVal);
+    Serial.printf("byte to long - long: ");
+    Serial.print(result);
+    Serial.println();
+    return result;
 }
 
 void RFID::init(rfidCallback rfidCb)
