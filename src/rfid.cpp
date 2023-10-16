@@ -35,20 +35,31 @@ byte *RFID::longToByte(long &longVal)
 {
     Serial.printf("long to byte - long: ");
     Serial.print(longVal);
-    Serial.println();
+    Serial.println();    
     byte *result = (byte *)&longVal;
-    dumpByteArray(result, 16);
+    dumpByteArray(result, sizeof(result));  
+    Serial.println();        
+    Serial.printf("buffer size: ");
+    Serial.println(sizeof(result));
+    Serial.println();      
+
     return result;
 }
 
 long RFID::byteToLong(byte *byteVal)
 {
+    int size = 18;
     Serial.printf("long to byte - byte: ");
-    dumpByteArray(byteVal, 16);
+    dumpByteArray(byteVal, size);
+    Serial.println();       
+    Serial.printf("buffer size: ");
+    Serial.println(sizeof(byteVal));
+    Serial.println();    
     long result = *((long *)byteVal);
     Serial.printf("byte to long - long: ");
     Serial.print(result);
     Serial.println();
+
     return result;
 }
 
@@ -88,13 +99,13 @@ void RFID::readTag()
         return;
 
     // looking for spoolid and weight first
+    byte size = 18; // The MIFARE_Read method requires a buffer that is at least 18 bytes to hold the 16 bytes of a block.
+    byte trailerBlock = 3;
     byte sector = 0;
     byte spoolIdBlock = 1;
     byte spoolWeightBlock = 2;
     MFRC522::StatusCode status;
-    byte buffer[18];
-    byte size = sizeof(buffer);
-    byte trailerBlock = 3;
+    byte buffer[size]; 
 
     status = (MFRC522::StatusCode)pMfrc522->PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, trailerBlock, &key, &(pMfrc522->uid));
     if (status != MFRC522::STATUS_OK)
@@ -108,10 +119,13 @@ void RFID::readTag()
         Serial.println(F("Reading spoolid failed."));
         return; // early exit w/o spoolid
     }
-    TagData td;    
+    TagData td;  
+
+
+
     td.spoolId = byteToLong(buffer);
     Serial.println(F("SpoolId:"));
-    dumpByteArray(buffer, 16);
+    Serial.print(td.spoolId);
     Serial.println();
 
     status = (MFRC522::StatusCode)pMfrc522->MIFARE_Read(spoolWeightBlock, buffer, &size);
@@ -121,7 +135,7 @@ void RFID::readTag()
     }
     td.spoolWeight = byteToLong(buffer);
     Serial.println(F("spool weight:"));
-    dumpByteArray(buffer, 16);
+    Serial.print(td.spoolWeight);
     Serial.println();
 
     // Dump the sector data
@@ -154,7 +168,9 @@ bool RFID::writeTag(TagData &tagData)
         return false;
     }
 
-    status = (MFRC522::StatusCode)pMfrc522->MIFARE_Write(spoolIdBlock, longToByte(writeData.spoolId), 16);
+    longToByte(tagData.spoolId);
+
+    status = (MFRC522::StatusCode)pMfrc522->MIFARE_Write(spoolIdBlock, clearBlock, 16);
     if (status != MFRC522::STATUS_OK)
     {
         Serial.println(F("Writing SpoolId failed"));
@@ -162,7 +178,7 @@ bool RFID::writeTag(TagData &tagData)
     }
     Serial.println(F("Writing SpoolId success"));
 
-    status = (MFRC522::StatusCode)pMfrc522->MIFARE_Write(spoolWeightBlock, longToByte(writeData.spoolWeight), 16);
+    status = (MFRC522::StatusCode)pMfrc522->MIFARE_Write(spoolWeightBlock, clearBlock, 16);
     if (status != MFRC522::STATUS_OK)
     {
         Serial.println(F("Writing spool weight failed"));

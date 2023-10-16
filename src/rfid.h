@@ -29,7 +29,6 @@ private:
     MFRC522::MIFARE_Key key; 
     bool IsWrite = false;
     byte clearBlock[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; //all zeros. This can be used to delete a block.
-    byte readbackblock[18]; // The MIFARE_Read method requires a buffer that is at least 18 bytes to hold the 16 bytes of a block.
     void prepareKey();
     void prepareKey(byte authKey[6]);
     bool writeTag(TagData &tagData);
