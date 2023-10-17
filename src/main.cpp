@@ -139,7 +139,8 @@ void mqttCb(char *topic, byte *payload, unsigned int length)
   }
 };
 
-void rfidCb(TagData &data){
+void rfidCb(TagData &data)
+{
   Serial.println("CB Tagdata");
   Serial.printf("SpoolId ");
   Serial.print(data.spoolId);
@@ -148,7 +149,6 @@ void rfidCb(TagData &data){
   Serial.print(data.spoolWeight);
   Serial.println();
 }
-
 
 MqttClient mqttClient(WIFI_SSID, WIFI_PASSWORD, MQTT_BROKER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD, MQTT_CLIENTID, mqttCb);
 const String fullTopic = String(MQTT_TOPIC + MQTT_TOPIC_SEPARATOR + MQTT_CLIENTID);
@@ -263,7 +263,8 @@ void writeTag()
   delay(1500);
   display.showMessage(MESSAGE_WRITETAG_START);
   delay(5000);
-  if(rfid.write(tag)) {
+  if (rfid.write(tag))
+  {
     display.showMessage(MESSAGE_WRITETAG_READY);
     setRunModeMeasure();
   }
@@ -271,7 +272,6 @@ void writeTag()
   {
     setRunModeError(MODULE_RFID, ERROR_TAGWRITE_FAILED);
   }
-
 }
 
 void measure()
