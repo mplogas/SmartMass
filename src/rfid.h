@@ -25,15 +25,16 @@ protected:
 private:
     rfidCallback callback;
     TagData writeData;
+    byte clearBlock[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; //all zeros. This can be used to delete a block.
+    byte *writeBlock;
     MFRC522 *pMfrc522;
     MFRC522::MIFARE_Key key; 
     bool IsWrite = false;
-    byte clearBlock[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; //all zeros. This can be used to delete a block.
     void prepareKey();
     void prepareKey(byte authKey[6]);
     bool writeTag(TagData &tagData);
     void readTag();     
-    byte *longToByte(long &longVal);
+    void longToByte(long &longVal, byte* byteArr);
     long byteToLong(byte *byteVal);
     bool openTag();
     void closeTag();

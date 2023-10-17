@@ -141,10 +141,10 @@ void mqttCb(char *topic, byte *payload, unsigned int length)
 
 void rfidCb(TagData &data){
   Serial.println("CB Tagdata");
-  Serial.printf("SpoolId");
+  Serial.printf("SpoolId ");
   Serial.print(data.spoolId);
   Serial.println();
-  Serial.printf("Spool Weight");
+  Serial.printf("Spool Weight ");
   Serial.print(data.spoolWeight);
   Serial.println();
 }
