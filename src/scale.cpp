@@ -1,3 +1,11 @@
+/**
+ * @file scale.cpp
+ * @brief Implementation of the Scale class.
+ * 
+ * This file contains the implementation of the Scale class, which is used to interface with the HX711 load cell amplifier.
+ * The Scale class provides methods for initializing the HX711, calibrating the scale, taring the scale, and measuring the weight.
+ * 
+ */
 #include "scale.h"
 
 Scale::Scale(uint8_t dOutPin, uint8_t sckPin)

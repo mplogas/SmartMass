@@ -1,3 +1,4 @@
+
 #include "display.h"
 
 Display::Display(uint16_t displayWidth, uint16_t displayHeight, int8_t resetPin, unsigned long screenTimeOut)

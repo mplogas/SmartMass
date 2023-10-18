@@ -1,11 +1,17 @@
+/**
+ * @file rfid.cpp
+ * @brief Implementation of the RFID class for reading and writing data to RFID tags.
+ *
+ * This file contains the implementation of the RFID class, which provides methods for reading and writing data to RFID tags.
+ * The class uses the MFRC522 library for communication with the RFID reader.
+ *
+ */
 #include "rfid.h"
 
 RFID::RFID(uint8_t chipselectPin, uint8_t resetPin)
 {
     pMfrc522 = new MFRC522(chipselectPin, resetPin);
 }
-
-
 
 void RFID::prepareKey()
 {

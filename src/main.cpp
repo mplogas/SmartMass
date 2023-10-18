@@ -1,3 +1,18 @@
+
+/**
+ * @file main.cpp
+ * @brief Main file for the filament scale project.
+ * 
+ * This file contains the main function and the implementation of the RunMode enum and Configuration struct.
+ * It also includes the implementation of the MqttClient, Display, Scale, and RFID classes.
+ * 
+ * The main function initializes the device, subscribes to the MQTT broker, and enters a loop where it measures the weight of the filament spool and publishes it to the broker.
+ * The device can be configured, calibrated, tared, and write a tag to the RFID reader.
+ * 
+ * @author Marc Plogas
+ * @date 2023
+ */
+
 #include "configuration.h"
 #include "constants.h"
 #include "mqttclient.h"
@@ -5,6 +20,8 @@
 #include "scale.h"
 #include "rfid.h"
 #include <ArduinoJson.h>
+
+
 
 enum RunMode
 {
@@ -18,6 +35,10 @@ enum RunMode
   Test
 };
 
+/**
+ * @brief Struct for storing configuration data.
+ * 
+*/
 struct Configuration
 {
 
@@ -42,6 +63,12 @@ Scale::Measurement measurement;
 RFID rfid(RFID_SS_PIN, RFID_RST_PIN);
 TagData tag;
 
+/**
+ * Callback function for MQTT messages. Parses the message payload as a JSON object and performs actions based on the "action" key.
+ * @param topic The MQTT topic the message was received on.
+ * @param payload The message payload.
+ * @param length The length of the message payload.
+ */
 void mqttCb(char *topic, byte *payload, unsigned int length)
 {
   StaticJsonDocument<512> doc;
@@ -139,6 +166,9 @@ void mqttCb(char *topic, byte *payload, unsigned int length)
   }
 };
 
+/**
+ * Callback function for RFID tag data. Prints the tag data to the serial console.
+*/
 void rfidCb(TagData &data)
 {
   Serial.println("CB Tagdata");
@@ -153,6 +183,9 @@ void rfidCb(TagData &data)
 MqttClient mqttClient(WIFI_SSID, WIFI_PASSWORD, MQTT_BROKER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD, MQTT_CLIENTID, mqttCb);
 const String fullTopic = String(MQTT_TOPIC + MQTT_TOPIC_SEPARATOR + MQTT_CLIENTID);
 
+/**
+ * @brief Initializes the configuration struct with default values.
+*/
 void intializeConfiguration()
 {
   config.displayTimeout = DISPLAY_TIMEOUT;
@@ -162,12 +195,18 @@ void intializeConfiguration()
   config.loadcellMeasurementSampling = LOADCELL_MEASUREMENT_SAMPLING;
 }
 
+/**
+ * @brief Sets the current run mode to Measure and displays the ready message.
+*/
 void setRunModeMeasure()
 {
   modeSwitch = true;
   currentMode = RunMode::Measure;
 }
 
+/**
+ * @brief Sets the current run mode to Error and displays the error message.
+*/
 void setRunModeError(const char *module, const char *msg)
 {
   displayError.module = module;
@@ -176,6 +215,10 @@ void setRunModeError(const char *module, const char *msg)
 
   currentMode = RunMode::Error;
 }
+
+/**
+ * @brief Initializes the scale.
+*/
 void initializeDevice()
 {
   display.showInitMessage();
@@ -191,6 +234,9 @@ void initializeDevice()
   }
 }
 
+/**
+ * @brief Calibrates the scale.
+*/
 void calibrateDevice()
 {
   display.showTitle(TITLE_CALIBRATION);
@@ -219,6 +265,9 @@ void calibrateDevice()
   setRunModeMeasure();
 }
 
+/**
+ * @brief Configures the scale.
+*/
 void configureDevice()
 {
   display.showTitle(TITLE_CONFIGURATION);
@@ -240,6 +289,9 @@ void configureDevice()
   setRunModeMeasure();
 }
 
+/**
+ * @brief Tares the scale.
+*/
 void tare()
 {
   display.showTitle(TITLE_TARE);
@@ -257,6 +309,9 @@ void tare()
   }
 }
 
+/**
+ * @brief Writes a tag to the RFID reader.
+*/
 void writeTag()
 {
   display.showTitle(TITLE_WRITETAG);
@@ -274,6 +329,9 @@ void writeTag()
   }
 }
 
+/**
+ * @brief Measures the weight of the filament spool and publishes it to the MQTT broker.
+*/
 void measure()
 {
   if (modeSwitch)
@@ -306,6 +364,9 @@ void measure()
   }
 }
 
+/**
+ * @brief Runs experiments for testing and debugging.
+*/
 void runExperiments()
 {
   // testing error display
@@ -331,6 +392,9 @@ void runExperiments()
   delay(5000);
 }
 
+/**
+ * @brief The setup function. Initializes the serial console, the display, the scale, and the MQTT client.
+*/
 void setup()
 {
   Serial.begin(115200);
@@ -350,6 +414,9 @@ void setup()
   rfid.init(rfidCb);
 }
 
+/**
+ * @brief The loop function. Enters a loop where it measures the weight of the filament spool and publishes it to the broker.
+*/
 void loop()
 {
 
