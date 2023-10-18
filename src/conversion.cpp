@@ -26,6 +26,8 @@ void Conversion::uuidToByte(String &uuid, byte *block) {
     }
 }
 
+
+
 void Conversion::uuidToByte(char *uuid, byte *block) {
     // Remove the hyphens
     for (int i = 0, j = 0; i < 36; ++i) {
@@ -194,6 +196,49 @@ void Conversion::byteArraysToString(byte *block1, byte *block2, byte *block3, ch
             char hexPair[3];
             sprintf(hexPair, "%02x", block3[i]);
             strcat(output, hexPair);
+        }
+    }
+}
+
+void Conversion::stringToByteArray(String input, byte *block) {
+    for (int i = 0; i < 16; i++) {
+        if (i < input.length()) {
+            block[i] = (byte)input[i];
+        } else {
+            block[i] = 0;
+        }
+    }
+}
+
+void Conversion::charArrayToByteArray(char *input, byte *block) {
+    for (int i = 0; i < 16; i++) {
+        if (i < strlen(input)) {
+            block[i] = (byte)input[i];
+        } else {
+            block[i] = 0;
+        }
+    }
+}
+
+String Conversion::byteArrayToString(byte *block) {
+    String output = "";
+    for (int i = 0; i < 16; i++) {
+        if (block[i] != 0) {
+            output += (char)block[i];
+        } else {
+            break;
+        }
+    }
+    return output;
+}
+
+void Conversion::byteArrayToCharArray(byte *block, char *output) {
+    for (int i = 0; i < 16; i++) {
+        if (block[i] != 0) {
+            output[i] = (char)block[i];
+        } else {
+            output[i] = '\0';
+            break;
         }
     }
 }

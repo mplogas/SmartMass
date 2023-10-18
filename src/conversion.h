@@ -1,3 +1,7 @@
+/**
+ * @file conversion.h
+ * @brief Contains the declaration of the Conversion class and its member functions.
+ */
 
 #ifndef CONVERISON_H
 #define CONVERISON_H
@@ -104,6 +108,38 @@ public:
      * @param bufferSize The size of the byte array.
      */
     static void dumpByteArray(byte *buffer, byte bufferSize);
+
+    /**
+     * @brief Converts a string to a byte array.
+     * 
+     * @param input The string to convert.
+     * @param block The byte array to store the converted value in.
+     */
+    static void stringToByteArray(String input, byte *block);
+
+    /**
+     * @brief Converts a character array to a byte array.
+     * 
+     * @param input The character array to convert.
+     * @param block The byte array to store the converted value in.
+     */
+    static void charArrayToByteArray(char *input, byte *block);
+
+    /**
+     * @brief Converts a byte array to a string.
+     * 
+     * @param block The byte array to convert.
+     * @return The converted string.
+     */
+    static String byteArrayToString(byte *block);
+
+    /**
+     * @brief Converts a byte array to a character array.
+     * 
+     * @param block The byte array to convert.
+     * @param output The character array to store the converted value in.
+     */
+    static void byteArrayToCharArray(byte *block, char *output);
 };
 
 #endif

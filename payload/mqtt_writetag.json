@@ -1,7 +1,13 @@
 {
     "action": "write-tag",
     "tag": {
-        "spool_id": 53454353,
-        "spool_weight": 135
+        "spool_id": "75dd14f4-730d-4c52-bc07-fc79164f6c47",
+        "spool_weight": 135,
+        "material": "PLA",
+        "color": "#ff0000",
+        "manufacturer": "Sunlu",
+        "spool_name": "Sunlu PETG red",
+        "timestamp": 1697660662
+
     }
 }

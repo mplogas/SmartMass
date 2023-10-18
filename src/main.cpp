@@ -2,13 +2,13 @@
 /**
  * @file main.cpp
  * @brief Main file for the filament scale project.
- * 
+ *
  * This file contains the main function and the implementation of the RunMode enum and Configuration struct.
  * It also includes the implementation of the MqttClient, Display, Scale, and RFID classes.
- * 
+ *
  * The main function initializes the device, subscribes to the MQTT broker, and enters a loop where it measures the weight of the filament spool and publishes it to the broker.
  * The device can be configured, calibrated, tared, and write a tag to the RFID reader.
- * 
+ *
  * @author Marc Plogas
  * @date 2023
  */
@@ -20,8 +20,6 @@
 #include "scale.h"
 #include "rfid.h"
 #include <ArduinoJson.h>
-
-
 
 enum RunMode
 {
@@ -37,8 +35,8 @@ enum RunMode
 
 /**
  * @brief Struct for storing configuration data.
- * 
-*/
+ *
+ */
 struct Configuration
 {
 
@@ -61,7 +59,8 @@ Scale scale(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
 Scale::Measurement measurement;
 
 RFID rfid(RFID_SS_PIN, RFID_RST_PIN);
-TagData tag;
+TagData wTag; // tag data to be written to the RFID reader
+TagData rTag; // tag data read from the RFID reader
 
 /**
  * Callback function for MQTT messages. Parses the message payload as a JSON object and performs actions based on the "action" key.
@@ -139,22 +138,39 @@ void mqttCb(char *topic, byte *payload, unsigned int length)
       JsonObject tagJson = doc["tag"];
       if (tagJson != NULL)
       {
-        unsigned long spoolId = tagJson["spool_id"]; // TODO: GUID/byte[16]?
+        // support for char and char* is not implemented in ArduinoJson 6.18+, so we have to use String
+        String spoolId = tagJson["spool_id"];
         unsigned long spoolWeight = tagJson["spool_weight"];
+        String material = tagJson["material"];
+        String color = tagJson["color"];
+        String manufacturer = tagJson["manufacturer"];
+        String spoolName = tagJson["spool_name"];
+        unsigned long timestamp = tagJson["timestamp"];
 
         Serial.printf("SpoolId: ");
         Serial.print(spoolId);
         Serial.println();
 
-        if (spoolId == 0)
+        if (spoolId.isEmpty())
+        {
+          Serial.println("spool id is empty");
           return; // early exit because we need a spool id from the backend
+        }
         else
         {
-          tag.spoolId = spoolId;
+          wTag.spoolId = spoolId;
         }
 
-        if (spoolWeight != 0)
-          tag.spoolWeight = spoolWeight;
+        if (!material.isEmpty())
+          wTag.material = material;
+        if (!color.isEmpty())
+          wTag.color = color;
+        if (!manufacturer.isEmpty())
+          wTag.manufacturer = manufacturer;
+        if (!spoolName.isEmpty())
+          wTag.spoolName = spoolName;
+        if (timestamp != 0)
+          wTag.timestamp = timestamp;
       }
 
       currentMode = RunMode::WriteTag;
@@ -167,17 +183,33 @@ void mqttCb(char *topic, byte *payload, unsigned int length)
 };
 
 /**
- * Callback function for RFID tag data. Prints the tag data to the serial console.
-*/
+ * Callback function for RFID tag data. Prints the tag data to the serial console for debugging purposes.
+ */
 void rfidCb(TagData &data)
 {
-  Serial.println("CB Tagdata");
-  Serial.printf("SpoolId ");
-  Serial.print(data.spoolId);
-  Serial.println();
-  Serial.printf("Spool Weight ");
-  Serial.print(data.spoolWeight);
-  Serial.println();
+    rTag = data;
+    Serial.println("CB Tagdata");
+    Serial.printf("SpoolId ");
+    Serial.print(rTag.spoolId);
+    Serial.println();
+    Serial.printf("Spool Weight ");
+    Serial.print(rTag.spoolWeight);
+    Serial.println();
+    Serial.printf("Material ");
+    Serial.print(rTag.material);
+    Serial.println();
+    Serial.printf("Color ");
+    Serial.print(rTag.color);
+    Serial.println();
+    Serial.printf("Manufacturer ");
+    Serial.print(rTag.manufacturer);
+    Serial.println();
+    Serial.printf("Spool Name ");
+    Serial.print(rTag.spoolName);
+    Serial.println();
+    Serial.printf("Timestamp ");
+    Serial.print(rTag.timestamp);
+    Serial.println();
 }
 
 MqttClient mqttClient(WIFI_SSID, WIFI_PASSWORD, MQTT_BROKER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD, MQTT_CLIENTID, mqttCb);
@@ -185,7 +217,7 @@ const String fullTopic = String(MQTT_TOPIC + MQTT_TOPIC_SEPARATOR + MQTT_CLIENTI
 
 /**
  * @brief Initializes the configuration struct with default values.
-*/
+ */
 void intializeConfiguration()
 {
   config.displayTimeout = DISPLAY_TIMEOUT;
@@ -197,7 +229,7 @@ void intializeConfiguration()
 
 /**
  * @brief Sets the current run mode to Measure and displays the ready message.
-*/
+ */
 void setRunModeMeasure()
 {
   modeSwitch = true;
@@ -206,7 +238,7 @@ void setRunModeMeasure()
 
 /**
  * @brief Sets the current run mode to Error and displays the error message.
-*/
+ */
 void setRunModeError(const char *module, const char *msg)
 {
   displayError.module = module;
@@ -218,7 +250,7 @@ void setRunModeError(const char *module, const char *msg)
 
 /**
  * @brief Initializes the scale.
-*/
+ */
 void initializeDevice()
 {
   display.showInitMessage();
@@ -236,7 +268,7 @@ void initializeDevice()
 
 /**
  * @brief Calibrates the scale.
-*/
+ */
 void calibrateDevice()
 {
   display.showTitle(TITLE_CALIBRATION);
@@ -267,7 +299,7 @@ void calibrateDevice()
 
 /**
  * @brief Configures the scale.
-*/
+ */
 void configureDevice()
 {
   display.showTitle(TITLE_CONFIGURATION);
@@ -291,7 +323,7 @@ void configureDevice()
 
 /**
  * @brief Tares the scale.
-*/
+ */
 void tare()
 {
   display.showTitle(TITLE_TARE);
@@ -311,14 +343,14 @@ void tare()
 
 /**
  * @brief Writes a tag to the RFID reader.
-*/
+ */
 void writeTag()
 {
   display.showTitle(TITLE_WRITETAG);
   delay(1500);
   display.showMessage(MESSAGE_WRITETAG_START);
   delay(5000);
-  if (rfid.write(tag))
+  if (rfid.write(wTag))
   {
     display.showMessage(MESSAGE_WRITETAG_READY);
     setRunModeMeasure();
@@ -331,7 +363,7 @@ void writeTag()
 
 /**
  * @brief Measures the weight of the filament spool and publishes it to the MQTT broker.
-*/
+ */
 void measure()
 {
   if (modeSwitch)
@@ -366,7 +398,7 @@ void measure()
 
 /**
  * @brief Runs experiments for testing and debugging.
-*/
+ */
 void runExperiments()
 {
   // testing error display
@@ -394,7 +426,7 @@ void runExperiments()
 
 /**
  * @brief The setup function. Initializes the serial console, the display, the scale, and the MQTT client.
-*/
+ */
 void setup()
 {
   Serial.begin(115200);
@@ -416,7 +448,7 @@ void setup()
 
 /**
  * @brief The loop function. Enters a loop where it measures the weight of the filament spool and publishes it to the broker.
-*/
+ */
 void loop()
 {
 
