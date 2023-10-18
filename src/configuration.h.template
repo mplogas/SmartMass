@@ -12,6 +12,7 @@ const char *MQTT_BROKER = "";
 const char *MQTT_TOPIC = ""; //without tailing slash!
 const char *MQTT_USER = "";
 const char *MQTT_PASSWORD = "";
+const char *MQTT_CLIENTID = "scale-01";
 const int MQTT_PORT = 1883;
 
 //Display

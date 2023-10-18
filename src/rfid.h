@@ -5,6 +5,8 @@
 #include <SPI.h>
 #include <MFRC522.h>
 
+#include "conversion.h"
+
 typedef struct
 {
     long spoolId;
@@ -21,10 +23,6 @@ public:
     void init(byte authKey[6], rfidCallback callback);
     void loop();
     bool write(TagData &tagData);
-
-protected:
-    void dumpByteArray(byte *buffer, byte bufferSize);
-
 private:
     rfidCallback callback;
     TagData writeData;
@@ -37,8 +35,6 @@ private:
     void prepareKey(byte authKey[6]);
     bool writeTag(TagData &tagData);
     void readTag();
-    void longToByte(long &longVal, byte *byteArr);
-    long byteToLong(byte *byteVal);
     bool openTag();
     void closeTag();
 };
