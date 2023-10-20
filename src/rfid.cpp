@@ -66,84 +66,87 @@ void RFID::readTag()
         return;
 
     byte size = 18; // The MIFARE_Read method requires a buffer that is at least 18 bytes to hold the 16 bytes of a block.
-    MFRC522::StatusCode status;
     byte buffer[size];
+    TagData td;
 
-    status = (MFRC522::StatusCode)pMfrc522->PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, trailerBlock, &key, &(pMfrc522->uid));
-    if (status != MFRC522::STATUS_OK)
+    if (readBlock(spoolIdBlock, buffer))
     {
-        Serial.println(F("PCD_Authenticate() failed with Key A"));
-        return;
+        td.spoolId = Conversion::byteToUuid(buffer);
     }
-    status = (MFRC522::StatusCode)pMfrc522->MIFARE_Read(spoolIdBlock, buffer, &size);
-    if (status != MFRC522::STATUS_OK)
+    else
     {
         Serial.println(F("Reading spoolid failed."));
         return; // early exit w/o spoolid
     }
-    TagData td;
-    td.spoolId = Conversion::byteToUuid(buffer);
 
-    status = (MFRC522::StatusCode)pMfrc522->MIFARE_Read(spoolWeightBlock, buffer, &size);
-    if (status != MFRC522::STATUS_OK)
+    if (readBlock(spoolWeightBlock, buffer))
+    {
+        td.spoolWeight = Conversion::byteToLong(buffer);
+    }
+    else
     {
         Serial.println(F("Reading spool weight failed."));
-    } else {
-        td.spoolWeight = Conversion::byteToLong(buffer);        
     }
 
-    status = (MFRC522::StatusCode)pMfrc522->MIFARE_Read(spoolManufacturerBlock, buffer, &size);
-    if (status != MFRC522::STATUS_OK)
+    if (readBlock(spoolManufacturerBlock, buffer))
+    {
+        td.manufacturer = Conversion::byteArrayToString(buffer);
+    }
+    else
     {
         Serial.println(F("Reading spool manufacturer failed."));
-    } else {
-        td.manufacturer = Conversion::byteArrayToString(buffer);
-    } 
+    }
 
-    status = (MFRC522::StatusCode)pMfrc522->MIFARE_Read(spoolMaterialBlock, buffer, &size);
-    if (status != MFRC522::STATUS_OK)
+    if (readBlock(spoolMaterialBlock, buffer))
     {
-        Serial.println(F("Reading spool material failed."));
-    } else {
         td.material = Conversion::byteArrayToString(buffer);
     }
-
-    status = (MFRC522::StatusCode)pMfrc522->MIFARE_Read(spoolColorBlock, buffer, &size);
-    if (status != MFRC522::STATUS_OK)
+    else
     {
-        Serial.println(F("Reading spool color failed."));
-    } else {
+        Serial.println(F("Reading spool material failed."));
+    }
+
+    if (readBlock(spoolColorBlock, buffer))
+    {
         td.color = Conversion::byteArrayToString(buffer);
     }
-
-    status = (MFRC522::StatusCode)pMfrc522->MIFARE_Read(spoolNameBlock1, buffer, &size);
-    if (status != MFRC522::STATUS_OK)
+    else
     {
-        Serial.println(F("Reading spool name failed."));
-    } else {
-        byte buffer2[size];
-        byte buffer3[size];
-        status = (MFRC522::StatusCode)pMfrc522->MIFARE_Read(spoolNameBlock2, buffer2, &size);
-        if (status != MFRC522::STATUS_OK)
-        {
-            Serial.println(F("Reading spool name block2 failed."));
-        } else {
-            status = (MFRC522::StatusCode)pMfrc522->MIFARE_Read(spoolNameBlock3, buffer3, &size);
-            if (status != MFRC522::STATUS_OK)
-            {
-                Serial.println(F("Reading spool name block3 failed."));
-            } else {
-                td.spoolName = Conversion::byteArraysToString(buffer, buffer2, buffer3);
-            }
-        }
+        Serial.println(F("Reading spool color failed."));
     }
 
-    status = (MFRC522::StatusCode)pMfrc522->MIFARE_Read(spoolTimestampBlock, buffer, &size);
-    if (status != MFRC522::STATUS_OK)
+    if (readBlock(spoolNameBlock1, buffer))
+    {
+        byte buffer2[size];
+        byte buffer3[size];
+        if (readBlock(spoolNameBlock2, buffer2))
+        {
+            if (readBlock(spoolNameBlock3, buffer3))
+            {
+                td.spoolName = Conversion::byteArraysToString(buffer, buffer2, buffer3);
+            }
+            else
+            {
+                Serial.println(F("Reading spool name block3 failed."));
+            }
+        }
+        else
+        {
+            Serial.println(F("Reading spool name block2 failed."));
+        }
+    }
+    else
+    {
+        Serial.println(F("Reading spool name block1 failed."));
+    }
+
+    if (readBlock(spoolTimestampBlock, buffer))
+    {
+        td.timestamp = Conversion::byteToLong(buffer);
+    }
+    else
     {
         Serial.println(F("Reading spool timestamp failed."));
-    } else {
-        td.timestamp = Conversion::byteToLong(buffer);
     }
 
     // Dump the sector data
@@ -154,6 +157,72 @@ void RFID::readTag()
     callback(td);
     closeTag();
 }
+
+bool RFID::readBlock(byte blockId, byte buffer[18])
+{
+    if (authenticate(authKey, blockId))
+    {
+        byte size = 18;
+        MFRC522::StatusCode status;
+        status = (MFRC522::StatusCode)pMfrc522->MIFARE_Read(blockId, buffer, &size);
+        if (status != MFRC522::STATUS_OK)
+        {
+            Serial.printf("Reading block ");
+            Serial.print(blockId);
+            Serial.printf(" failed");
+            Serial.println();
+            return false;
+        }
+        else
+        {
+            Serial.printf("Reading block ");
+            Serial.print(blockId);
+            Serial.printf(" succeded");
+            Serial.println();
+            return true;
+        }
+    }
+    else
+    {
+        Serial.printf("authenticating block ");
+        Serial.print(blockId);
+        Serial.printf(" failed");
+        Serial.println();
+        return false;
+    }
+}
+
+bool RFID::writeBlock(byte blockId, byte block[16], byte size)
+{
+    if (authenticate(authKey, blockId))
+    {
+        if ((MFRC522::StatusCode)pMfrc522->MIFARE_Write(blockId, block, size) != MFRC522::STATUS_OK)
+        {
+            Serial.printf("Writing block ");
+            Serial.print(blockId);
+            Serial.printf(" failed");
+            Serial.println();
+            return false;
+        }
+        else
+        {
+            Serial.printf("Writing block ");
+            Serial.print(blockId);
+            Serial.printf(" succeded");
+            Serial.println();
+            return true;
+        }
+    }
+    else
+    {
+        Serial.printf("authenticating block ");
+        Serial.print(blockId);
+        Serial.printf(" failed");
+        Serial.println();
+        return false;
+    }
+}
+
 bool RFID::writeTag(TagData &tagData)
 {
     if (!openTag())
@@ -164,33 +233,35 @@ bool RFID::writeTag(TagData &tagData)
 
     byte size = 16;
     MFRC522::StatusCode status;
-
-    status = (MFRC522::StatusCode)pMfrc522->PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_B, trailerBlock, &key, &(pMfrc522->uid));
-    if (status != MFRC522::STATUS_OK)
-    {
-        Serial.println(F("PCD_Authenticate() failed with Key B"));
-        return false;
-    }
     byte block[size];
-    Conversion::uuidToByte(tagData.spoolId, block);
-    status = (MFRC522::StatusCode)pMfrc522->MIFARE_Write(spoolIdBlock, block, size);
-    if (status != MFRC522::STATUS_OK)
+
+    if (!tagData.spoolId.isEmpty())
     {
-        Serial.println(F("Writing SpoolId failed"));
-        return false;
+        Conversion::uuidToByte(tagData.spoolId, block);
+        if (!writeBlock(spoolIdBlock, block, size))
+        {
+            Serial.println(F("Writing spool id failed"));
+            return false; // early exit
+        }
+        Serial.println(F("Writing spool id succeeded"));
     }
-    Serial.println(F("Writing SpoolId success"));
+    else
+    {
+        Serial.println(F("Empty spool id"));
+        return false; // early exit
+    }
 
     if (tagData.spoolWeight != 0)
     {
         Conversion::longToByte(tagData.spoolWeight, block);
-        status = (MFRC522::StatusCode)pMfrc522->MIFARE_Write(spoolWeightBlock, block, size);
-        if (status != MFRC522::STATUS_OK)
+        if (!writeBlock(spoolWeightBlock, block, size))
         {
             Serial.println(F("Writing spool weight failed"));
-            return false;
         }
-        Serial.println(F("Writing spool weight success"));
+        else
+        {
+            Serial.println(F("Writing spool weight succeeded"));
+        }
     }
     else
     {
@@ -200,13 +271,14 @@ bool RFID::writeTag(TagData &tagData)
     if (!tagData.manufacturer.isEmpty())
     {
         Conversion::stringToByteArray(tagData.manufacturer, block);
-        status = (MFRC522::StatusCode)pMfrc522->MIFARE_Write(spoolManufacturerBlock, block, size);
-        if (status != MFRC522::STATUS_OK)
+        if (!writeBlock(spoolManufacturerBlock, block, size))
         {
             Serial.println(F("Writing spool manufacturer failed"));
-            return false;
         }
-        Serial.println(F("Writing spool manufacturer success"));
+        else
+        {
+            Serial.println(F("Writing spool manufacturer succeeded"));
+        }
     }
     else
     {
@@ -216,13 +288,14 @@ bool RFID::writeTag(TagData &tagData)
     if (!tagData.material.isEmpty())
     {
         Conversion::stringToByteArray(tagData.material, block);
-        status = (MFRC522::StatusCode)pMfrc522->MIFARE_Write(spoolMaterialBlock, block, size);
-        if (status != MFRC522::STATUS_OK)
+        if (!writeBlock(spoolMaterialBlock, block, size))
         {
             Serial.println(F("Writing spool material failed"));
-            return false;
         }
-        Serial.println(F("Writing spool material success"));
+        else
+        {
+            Serial.println(F("Writing spool material succeeded"));
+        }
     }
     else
     {
@@ -232,15 +305,13 @@ bool RFID::writeTag(TagData &tagData)
     if (!tagData.color.isEmpty())
     {
         Conversion::stringToByteArray(tagData.color, block);
-        status = (MFRC522::StatusCode)pMfrc522->MIFARE_Write(spoolColorBlock, block, size);
-        if (status != MFRC522::STATUS_OK)
+        if (!writeBlock(spoolColorBlock, block, size))
         {
             Serial.println(F("Writing spool color failed"));
-            return false;
         }
         else
         {
-            Serial.println(F("Writing spool color success"));
+            Serial.println(F("Writing spool color succeeded"));
         }
     }
     else
@@ -253,31 +324,25 @@ bool RFID::writeTag(TagData &tagData)
         byte block2[size];
         byte block3[size];
         Conversion::splitToByteArrays(tagData.spoolName, block, block2, block3);
-        status = (MFRC522::StatusCode)pMfrc522->MIFARE_Write(spoolNameBlock1, block, size);
-        if (status != MFRC522::STATUS_OK)
+        if (!writeBlock(spoolNameBlock1, block, size))
         {
-            Serial.println(F("Writing spool name block failed"));
-            return false;
+            Serial.println(F("Writing spool name block1 failed"));
         }
         else
         {
-            status = (MFRC522::StatusCode)pMfrc522->MIFARE_Write(spoolNameBlock2, block2, size);
-            if (status != MFRC522::STATUS_OK)
+            if (!writeBlock(spoolNameBlock2, block2, size))
             {
                 Serial.println(F("Writing spool name block2 failed"));
-                return false;
             }
             else
             {
-                status = (MFRC522::StatusCode)pMfrc522->MIFARE_Write(spoolNameBlock3, block3, size);
-                if (status != MFRC522::STATUS_OK)
+                if (!writeBlock(spoolNameBlock3, block3, size))
                 {
                     Serial.println(F("Writing spool name block3 failed"));
-                    return false;
                 }
                 else
                 {
-                    Serial.println(F("Writing spool name success"));
+                    Serial.println(F("Writing spool name succeeded"));
                 }
             }
         }
@@ -289,16 +354,14 @@ bool RFID::writeTag(TagData &tagData)
 
     if (tagData.timestamp != 0)
     {
-        Conversion::longToByte(tagData.timestamp, block);
-        status = (MFRC522::StatusCode)pMfrc522->MIFARE_Write(spoolTimestampBlock, block, size);
-        if (status != MFRC522::STATUS_OK)
+        Serial.println(F("Skipping spool timestamp"));
+        if (!writeBlock(spoolTimestampBlock, block, size))
         {
             Serial.println(F("Writing spool timestamp failed"));
-            return false;
         }
         else
         {
-            Serial.println(F("Writing spool timestamp success"));
+            Serial.println(F("Writing spool timestamp succeeded"));
         }
     }
     else
@@ -314,6 +377,40 @@ bool RFID::writeTag(TagData &tagData)
     closeTag();
     return true;
 }
+
+// bool RFID::clearTag(byte authKey[6])
+// {
+//     if (!openTag())
+//         return false;
+
+//     byte size = 16;
+//     MFRC522::StatusCode status;
+
+//     status = (MFRC522::StatusCode)pMfrc522->PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_B, trailerBlock, &key, &(pMfrc522->uid));
+//     if (status != MFRC522::STATUS_OK)
+//     {
+//         Serial.println(F("PCD_Authenticate() failed with Key B"));
+//         return false;
+//     }
+
+//     for (byte i = 1; i < 16; i++)
+//     {
+//         status = (MFRC522::StatusCode)pMfrc522->MIFARE_Write(i, clearBlock, size);
+//         if (status != MFRC522::STATUS_OK)
+//         {
+//             Serial.print(F("Writing block "));
+//             Serial.print(i);
+//             Serial.println(F(" failed"));
+//             return false;
+//         }
+//         else
+//         {
+//             Serial.print(F("Writing block "));
+//             Serial.print(i);
+//             Serial.println(F(" success"));
+//         }
+//     }
+// }
 
 bool RFID::openTag()
 {
@@ -334,4 +431,17 @@ void RFID::closeTag()
     // Halt PICC & top encryption on PCD
     pMfrc522->PICC_HaltA();
     pMfrc522->PCD_StopCrypto1();
+}
+
+bool RFID::authenticate(MFRC522::PICC_Command keySlot, byte blockId)
+{
+    MFRC522::StatusCode status;
+    status = (MFRC522::StatusCode)pMfrc522->PCD_Authenticate(keySlot, blockId, &this->key, &(pMfrc522->uid));
+    if (status != MFRC522::STATUS_OK)
+    {
+        Serial.print(F("PCD_Authenticate() failed with Key "));
+        Serial.println(keySlot);
+        return false;
+    }
+    return true;
 }

@@ -1,5 +1,3 @@
-
-
 #ifndef RFID_H
 #define RFID_H
 
@@ -17,12 +15,12 @@ typedef struct
 {
     // String instead of char array because ArduinoJson doesn't support char arrays
     String spoolId;      // uuid
-    long spoolWeight;   // grams
+    long spoolWeight;    // grams
     String material;     // PLA, ABS, PETG, etc.
     String color;        // hex
     String manufacturer; // Prusa, Hatchbox, etc.
     String spoolName;    // name of the spool
-    long timestamp;     // timestamp of spool creation
+    long timestamp;      // timestamp of spool creation
 } TagData;
 
 /**
@@ -76,13 +74,20 @@ public:
      */
     bool write(TagData &tagData);
 
+    // /**
+    //  * @brief Clears the RFID tag. This is done by writing all zeros to the tag and applying a new authentication key.
+    //  *
+    //  * @return true if clear was successful, false otherwise.
+    //  */
+    // bool clearTag(byte authKey[6]);
+
 private:
     rfidCallback callback;                                                  // Callback function to be called when RFID tag is read.
     TagData writeData;                                                      // TagData struct containing the data to be written to the RFID tag.
     byte clearBlock[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // all zeros. This can be used to delete a block.
-    byte *writeBlock;                                                       // Pointer to the block to be written to the RFID tag.
     MFRC522 *pMfrc522;                                                      // Pointer to the MFRC522 object.
     MFRC522::MIFARE_Key key;                                                // MIFARE key object.
+    MFRC522::PICC_Command authKey = MFRC522::PICC_CMD_MF_AUTH_KEY_A;        // default key is A.
     const byte spoolIdBlock = 1;
     const byte spoolWeightBlock = 2;
     const byte spoolManufacturerBlock = 4;
@@ -92,15 +97,16 @@ private:
     const byte spoolNameBlock2 = 9;
     const byte spoolNameBlock3 = 10;
     const byte spoolTimestampBlock = 12;
-    const byte trailerBlock = 3;    
-    
-    bool IsWrite = false;                                                   // Flag to indicate if the RFID tag is being written to.
-    void prepareKey();                                                      // Helper function to prepare the default authentication key.
-    void prepareKey(byte authKey[6]);                                       // Helper function to prepare a custom authentication key.
-    bool writeTag(TagData &tagData);                                        // Helper function to write data to the RFID tag.
-    void readTag();                                                         // Helper function to read data from the RFID tag.
-    bool openTag();                                                         // Helper function to open the RFID tag for writing.
-    void closeTag();                                                        // Helper function to close the RFID tag after writing.
+    bool IsWrite = false;             // Flag to indicate if the RFID tag is being written to.
+    void prepareKey();                // Helper function to prepare the default authentication key.
+    void prepareKey(byte authKey[6]); // Helper function to prepare a custom authentication key.
+    bool writeTag(TagData &tagData);  // Helper function to write data to the RFID tag.
+    void readTag();                   // Helper function to read data from the RFID tag.
+    bool readBlock(byte blockId, byte buffer[18]);
+    bool writeBlock(byte blockId, byte block[16], byte size);
+    bool openTag();  // Helper function to open the RFID tag for writing.
+    void closeTag(); // Helper function to close the RFID tag after writing.
+    bool authenticate(MFRC522::PICC_Command key, byte blockId);
 };
 
 #endif
