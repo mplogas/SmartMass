@@ -161,6 +161,8 @@ void mqttCb(char *topic, byte *payload, unsigned int length)
           wTag.spoolId = spoolId;
         }
 
+        if(spoolWeight != 0)
+          wTag.spoolWeight = spoolWeight;
         if (!material.isEmpty())
           wTag.material = material;
         if (!color.isEmpty())

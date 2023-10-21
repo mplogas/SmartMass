@@ -15,12 +15,12 @@ typedef struct
 {
     // String instead of char array because ArduinoJson doesn't support char arrays
     String spoolId;      // uuid
-    long spoolWeight;    // grams
+    unsigned long spoolWeight;    // grams
     String material;     // PLA, ABS, PETG, etc.
     String color;        // hex
     String manufacturer; // Prusa, Hatchbox, etc.
     String spoolName;    // name of the spool
-    long timestamp;      // timestamp of spool creation
+    unsigned long timestamp;      // timestamp of spool creation
 } TagData;
 
 /**
@@ -102,11 +102,11 @@ private:
     void prepareKey(byte authKey[6]); // Helper function to prepare a custom authentication key.
     bool writeTag(TagData &tagData);  // Helper function to write data to the RFID tag.
     void readTag();                   // Helper function to read data from the RFID tag.
-    bool readBlock(byte blockId, byte buffer[18]);
-    bool writeBlock(byte blockId, byte block[16], byte size);
+    bool readBlock(byte blockId, byte buffer[18]); // Helper function to read a certain block from the RFID tag, includes call to authenticate().
+    bool writeBlock(byte blockId, byte block[16], byte size); // Helper function to write a certain block to the RFID tag, includes call to authenticate().
     bool openTag();  // Helper function to open the RFID tag for writing.
     void closeTag(); // Helper function to close the RFID tag after writing.
-    bool authenticate(MFRC522::PICC_Command key, byte blockId);
+    bool authenticate(MFRC522::PICC_Command key, byte blockId); // Helper function to authenticate the RFID tag.
 };
 
 #endif

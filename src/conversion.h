@@ -22,6 +22,14 @@ public:
     static void longToByte(long &longVal, byte *block);
 
     /**
+     * @brief Converts a long value to a byte array.
+     * 
+     * @param longVal The long value to convert.
+     * @param block The byte array to store the converted value in.
+     */
+    static void ulongToByte(unsigned long &longVal, byte *block);
+
+    /**
      * @brief Converts a UUID string to a byte array.
      * 
      * @param uuid The UUID string to convert.
@@ -64,6 +72,14 @@ public:
      * @return The converted long value.
      */
     static long byteToLong(byte *block);
+
+    /**
+     * @brief Converts a byte array to an unsigned long value.
+     * 
+     * @param block The byte array to convert.
+     * @return The converted long value.
+     */
+    static unsigned long byteToULong(byte *block);
 
     /**
      * @brief Converts a byte array to a UUID string.

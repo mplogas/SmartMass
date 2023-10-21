@@ -51,25 +51,22 @@ void Conversion::splitToByteArrays(String &input, byte *block1, byte *block2, by
         return;
     }
     
-    // Convert each pair of hexadecimal digits to a byte
+    // slice the string into 3 parts, each 16 characters long and fill up the blocks
     for (int i = 0; i < 16; i++) {
-        if (i * 2 < input.length()) {
-            String hexPair = input.substring(i * 2, (i * 2) + 2);
-            block1[i] = (byte) strtol(hexPair.c_str(), NULL, 16);
+        if (i < input.length()) {
+            block1[i] = (byte)input[i];
         } else {
             block1[i] = 0;
         }
-
-        if ((i + 16) * 2 < input.length()) {
-            String hexPair = input.substring((i + 16) * 2, ((i + 16) * 2) + 2);
-            block2[i] = (byte) strtol(hexPair.c_str(), NULL, 16);
+        
+        if ((i + 16) < input.length()) {
+            block2[i] = (byte)input[i + 16];
         } else {
             block2[i] = 0;
         }
-
-        if ((i + 32) * 2 < input.length()) {
-            String hexPair = input.substring((i + 32) * 2, ((i + 32) * 2) + 2);
-            block3[i] = (byte) strtol(hexPair.c_str(), NULL, 16);
+        
+        if ((i + 32) < input.length()) {
+            block3[i] = (byte)input[i + 32];
         } else {
             block3[i] = 0;
         }
@@ -79,8 +76,7 @@ void Conversion::splitToByteArrays(String &input, byte *block1, byte *block2, by
 void Conversion::splitToByteArrays(char *input, byte *block1, byte *block2, byte *block3) {
     // Ensure the input is not longer than 48 characters
     if (strlen(input) > 48) {
-        Serial.println("Input length exceeds maximum limit");
-        return;
+        Serial.println("Input length exceeds maximum limit and will be cut off at 48 characters");
     }
 
     // Convert each pair of hexadecimal digits to a byte
@@ -120,7 +116,21 @@ void Conversion::longToByte(long &longVal, byte *block)
         block[i] = 0xFF;
     }
 
-    dumpByteArray(block, 16);
+    Serial.println();
+}
+
+void Conversion::ulongToByte(unsigned long &longVal, byte *block)
+{
+    block[0] = (longVal >> 24) & 0xFF;
+    block[1] = (longVal >> 16) & 0xFF;
+    block[2] = (longVal >> 8) & 0xFF;
+    block[3] = longVal & 0xFF;
+    // clearing the remaining blocks
+    for (int i = sizeof(block); i < 16; i++)
+    {
+        block[i] = 0xFF;
+    }
+
     Serial.println();
 }
 
@@ -158,25 +168,25 @@ long Conversion::byteToLong(byte *byteVal)
     return result;
 }
 
-String Conversion::byteArraysToString(byte *block1, byte *block2, byte *block3) {
-    String output = "";
-    for (int i = 0; i < 16; i++) {
-        if (block1[i] != 0) {
-            char hexPair[3];
-            sprintf(hexPair, "%02x", block1[i]);
-            output += hexPair;
-        }
-        if (block2[i] != 0) {
-            char hexPair[3];
-            sprintf(hexPair, "%02x", block2[i]);
-            output += hexPair;
-        }
-        if (block3[i] != 0) {
-            char hexPair[3];
-            sprintf(hexPair, "%02x", block3[i]);
-            output += hexPair;
-        }
+unsigned long Conversion::byteToULong(byte *byteVal)
+{
+    unsigned long result = 0;
+    for (int i = 0; i < 4; i++)
+    {
+        result = (result << 8) | byteVal[i];
     }
+    return result;
+}
+
+String Conversion::byteArraysToString(byte *block1, byte *block2, byte *block3) {
+    char output[48] = "";
+    for (int i = 0; i < 16; i++) {
+        if (block1[i] != 0) output[i] = (char)block1[i];
+        if (block2[i] != 0) output[i + 16] = (char)block2[i];
+        if (block3[i] != 0) output[i + 32] = (char)block3[i];
+    }
+
+    Serial.println(output);
     return output;
 }
 

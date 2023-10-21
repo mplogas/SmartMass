@@ -253,7 +253,7 @@ bool RFID::writeTag(TagData &tagData)
 
     if (tagData.spoolWeight != 0)
     {
-        Conversion::longToByte(tagData.spoolWeight, block);
+        Conversion::ulongToByte(tagData.spoolWeight, block);
         if (!writeBlock(spoolWeightBlock, block, size))
         {
             Serial.println(F("Writing spool weight failed"));
@@ -354,7 +354,7 @@ bool RFID::writeTag(TagData &tagData)
 
     if (tagData.timestamp != 0)
     {
-        Serial.println(F("Skipping spool timestamp"));
+        Conversion::ulongToByte(tagData.timestamp, block);
         if (!writeBlock(spoolTimestampBlock, block, size))
         {
             Serial.println(F("Writing spool timestamp failed"));
