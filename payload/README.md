@@ -13,7 +13,7 @@
 ### Status (value)
 
 `BASETOPIC/status/clientid`
-`
+
 ```json
 {
     "device_id": "clientid",
@@ -25,7 +25,7 @@
 ### Heartbeat
 
 `BASETOPIC/heartbeat/clientid`
-`
+
 ```json
 {
     "device_id": "clientid",
