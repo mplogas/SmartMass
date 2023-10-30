@@ -216,9 +216,9 @@ void rfidCb(TagData &data)
     Serial.print(rTag.timestamp);
     Serial.println();
 }
-
-MqttClient mqttClient(WIFI_SSID, WIFI_PASSWORD, MQTT_BROKER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD, MQTT_CLIENTID, MQTT_TOPIC, mqttCb);
 const String fullTopic = String(MQTT_TOPIC + MQTT_TOPIC_SEPARATOR + MQTT_CLIENTID);
+MqttClient mqttClient(WIFI_SSID, WIFI_PASSWORD, MQTT_BROKER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD, MQTT_CLIENTID, fullTopic.c_str(), mqttCb);
+
 
 /**
  * @brief Initializes the configuration struct with default values.

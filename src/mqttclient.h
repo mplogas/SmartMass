@@ -43,9 +43,10 @@ private:
     const char *mqttPassword;
     const char *mqttClientId;
     const char *mqttHeartbeatTopic;
-    mqttCallback callback;
+    const char *heartbeatPayload = "{ \"action\": \"heartbeat\", \"status\": \"ok\" }";
     unsigned long lastHeartbeat = 0;    
-    const unsigned long heartbeatInterval = 5000; //milliseconds
+    const unsigned long heartbeatInterval = 60000; //milliseconds
+    mqttCallback callback;
 
     /**
      * @brief Connects to WiFi network.
@@ -99,10 +100,10 @@ public:
      * @param mqttUser Username for MQTT broker authentication.
      * @param mqttPassword Password for MQTT broker authentication.
      * @param mqttClientId Client ID for MQTT connection.
-     * @param mqttBaseTopic Base topic for MQTT heartbeat messages.
+     * @param mqttHeartbeatTopic Base topic for MQTT heartbeat messages.
      * @param callback Callback function for MQTT messages.
      */
-    MqttClient(const char *wifiSsid, const char *wifiPassword, const char *mqttBroker, int mqttPort, const char *mqttUser, const char *mqttPassword, const char *mqttClientId, const char *mqttBaseTopic, mqttCallback callback);
+    MqttClient(const char *wifiSsid, const char *wifiPassword, const char *mqttBroker, int mqttPort, const char *mqttUser, const char *mqttPassword, const char *mqttClientId, const char *mqttHeartbeatTopic, mqttCallback callback);
 
     /**
      * @brief Destructor for MqttClient class.
@@ -124,7 +125,7 @@ public:
      * @param topic Topic to publish to.
      * @param payload Message payload.
      */
-    void publish(const char *topic, char payload[]);
+    void publish(const char *topic, const char *payload);
 
     /**
      * @brief Subscribes to an MQTT topic.

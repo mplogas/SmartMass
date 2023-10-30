@@ -1,6 +1,6 @@
 #include "mqttclient.h"
 
-MqttClient::MqttClient(const char *wifi_ssid, const char *wifi_password, const char *mqtt_broker, int mqtt_port, const char *mqtt_user, const char *mqtt_password, const char *mqtt_clientid, const char *mqtt_basetopic, mqttCallback mqtt_callback)
+MqttClient::MqttClient(const char *wifi_ssid, const char *wifi_password, const char *mqtt_broker, int mqtt_port, const char *mqtt_user, const char *mqtt_password, const char *mqtt_clientid, const char *mqtt_heartbeattopic, mqttCallback mqtt_callback)
 {
     wifiSsid = wifi_ssid;
     wifiPassword = wifi_password;
@@ -9,7 +9,7 @@ MqttClient::MqttClient(const char *wifi_ssid, const char *wifi_password, const c
     mqttUser = mqtt_user;
     mqttPassword = mqtt_password;
     mqttClientId = mqtt_clientid;
-    mqttHeartbeatTopic = String(mqtt_basetopic + MQTT_TOPIC_SEPARATOR + mqtt_clientid).c_str();
+    mqttHeartbeatTopic = mqtt_heartbeattopic;
     callback = mqtt_callback;
 
     mqtt = new PubSubClient(wifi);
@@ -91,10 +91,10 @@ void MqttClient::emitHeartbeat()
     unsigned long now = millis();
     if (now - lastHeartbeat >= heartbeatInterval)
     {
-        lastHeartbeat = now;
+        lastHeartbeat = now;       
         
-        char *payload = "{ \"action\": \"heartbeat\", \"status\": \"ok\" }";
-        publish(mqttHeartbeatTopic, payload);
+        publish(mqttHeartbeatTopic, heartbeatPayload);
+        Serial.printf("Heartbeat sent to topic %s\n", mqttHeartbeatTopic);
     }
 }
 
@@ -125,7 +125,7 @@ void MqttClient::init()
     Serial.println();
 }
 
-void MqttClient::publish(const char *topic, char payload[])
+void MqttClient::publish(const char *topic, const char *payload)
 {
     if (wifiConnect() && mqttConnect())
     {
