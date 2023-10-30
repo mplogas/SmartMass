@@ -1,6 +1,6 @@
 #include "mqttclient.h"
 
-MqttClient::MqttClient(const char *wifi_ssid, const char *wifi_password, const char *mqtt_broker, int mqtt_port, const char *mqtt_user, const char *mqtt_password, const char *mqtt_clientid, mqttCallback mqtt_callback)
+MqttClient::MqttClient(const char *wifi_ssid, const char *wifi_password, const char *mqtt_broker, int mqtt_port, const char *mqtt_user, const char *mqtt_password, const char *mqtt_clientid, const char *mqtt_basetopic, mqttCallback mqtt_callback)
 {
     wifiSsid = wifi_ssid;
     wifiPassword = wifi_password;
@@ -9,6 +9,7 @@ MqttClient::MqttClient(const char *wifi_ssid, const char *wifi_password, const c
     mqttUser = mqtt_user;
     mqttPassword = mqtt_password;
     mqttClientId = mqtt_clientid;
+    mqttHeartbeatTopic = String(mqtt_basetopic + MQTT_TOPIC_SEPARATOR + mqtt_clientid).c_str();
     callback = mqtt_callback;
 
     mqtt = new PubSubClient(wifi);
@@ -85,10 +86,24 @@ boolean MqttClient::mqttConnect()
     return true;
 }
 
+void MqttClient::emitHeartbeat()
+{
+    unsigned long now = millis();
+    if (now - lastHeartbeat >= heartbeatInterval)
+    {
+        lastHeartbeat = now;
+        
+        char *payload = "{ \"action\": \"heartbeat\", \"status\": \"ok\" }";
+        publish(mqttHeartbeatTopic, payload);
+    }
+}
+
 void MqttClient::loop()
 {
-    if (wifiConnect() && mqttConnect())
+    if (wifiConnect() && mqttConnect()) {
+        emitHeartbeat();
         mqtt->loop();
+    }
 }
 
 void MqttClient::disconnect()

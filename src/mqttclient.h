@@ -42,7 +42,10 @@ private:
     const char *mqttUser;
     const char *mqttPassword;
     const char *mqttClientId;
+    const char *mqttHeartbeatTopic;
     mqttCallback callback;
+    unsigned long lastHeartbeat = 0;    
+    const unsigned long heartbeatInterval = 5000; //milliseconds
 
     /**
      * @brief Connects to WiFi network.
@@ -60,6 +63,11 @@ private:
      * @brief Disconnects from MQTT broker.
      */
     void mqttDisconnect();
+
+    /**
+     * @brief emits hearbeat message to MQTT broker.
+     */
+    void emitHeartbeat();
 
 protected:
     /**
@@ -91,9 +99,10 @@ public:
      * @param mqttUser Username for MQTT broker authentication.
      * @param mqttPassword Password for MQTT broker authentication.
      * @param mqttClientId Client ID for MQTT connection.
+     * @param mqttBaseTopic Base topic for MQTT heartbeat messages.
      * @param callback Callback function for MQTT messages.
      */
-    MqttClient(const char *wifiSsid, const char *wifiPassword, const char *mqttBroker, int mqttPort, const char *mqttUser, const char *mqttPassword, const char *mqttClientId, mqttCallback callback);
+    MqttClient(const char *wifiSsid, const char *wifiPassword, const char *mqttBroker, int mqttPort, const char *mqttUser, const char *mqttPassword, const char *mqttClientId, const char *mqttBaseTopic, mqttCallback callback);
 
     /**
      * @brief Destructor for MqttClient class.
