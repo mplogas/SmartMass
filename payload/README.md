@@ -35,7 +35,7 @@
 
 ### Commands
 
-`BASETOPIC/cmd/clientid/`
+`BASETOPIC/command/clientid/`
 
 ```json
 {
