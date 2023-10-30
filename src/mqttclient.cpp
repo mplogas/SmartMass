@@ -94,7 +94,10 @@ void MqttClient::emitHeartbeat()
         lastHeartbeat = now;       
         
         publish(mqttHeartbeatTopic, heartbeatPayload);
-        Serial.printf("Heartbeat sent to topic %s\n", mqttHeartbeatTopic);
+        Serial.print(now);
+        Serial.printf(" - emitted hearbeat");
+        Serial.println();
+        //Serial.printf("Heartbeat sent to topic %s\n", mqttHeartbeatTopic);
     }
 }
 

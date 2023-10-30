@@ -1,5 +1,0 @@
-//server sends no result, client replies with result
-{
-    "action": "calibrate",
-    "result": 981 
-}
