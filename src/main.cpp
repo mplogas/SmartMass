@@ -20,6 +20,7 @@
 #include "scale.h"
 #include "rfid.h"
 #include <ArduinoJson.h>
+#include <Preferences.h>
 
 enum RunMode
 {
@@ -33,8 +34,10 @@ enum RunMode
   Test
 };
 
+Preferences preferences;
+
 /**
- * @brief Struct for storing configuration data.
+ * @brief Struct for storing configuration data in memory.
  *
  */
 struct Configuration
@@ -222,11 +225,20 @@ const String fullTopic = String(MQTT_TOPIC + MQTT_TOPIC_SEPARATOR + MQTT_CLIENTI
  */
 void intializeConfiguration()
 {
-  config.displayTimeout = DISPLAY_TIMEOUT;
-  config.loadcellCalibration = LOADCELL_CALIBRATION;
-  config.loadcellKnownWeight = LOADCELL_KNOWN_WEIGHT;
-  config.loadcellMeasurementIntervall = LOADCELL_MEASUREMENT_INTERVAL;
-  config.loadcellMeasurementSampling = LOADCELL_MEASUREMENT_SAMPLING;
+  preferences.begin("smartmass", true);
+  config.displayTimeout = preferences.getULong("d_timeout", DISPLAY_TIMEOUT);
+  config.loadcellCalibration = preferences.getLong("lc_calibr", LOADCELL_CALIBRATION);
+  config.loadcellKnownWeight = preferences.getULong("lc_weight", LOADCELL_KNOWN_WEIGHT);
+  config.loadcellMeasurementIntervall =  preferences.getULong("lc_interval", LOADCELL_MEASUREMENT_INTERVAL);
+  config.loadcellMeasurementSampling = preferences.getInt("lc_sampling", LOADCELL_MEASUREMENT_SAMPLING);
+
+  if(preferences.isKey("d_timeout")) {
+    Serial.printf("display timeout: ");
+    Serial.print(config.displayTimeout);
+    Serial.println();
+  }
+
+  preferences.end();
 }
 
 /**
@@ -306,6 +318,14 @@ void configureDevice()
 {
   display.showTitle(TITLE_CONFIGURATION);
   delay(1500);
+
+  preferences.begin("smartmass", false);
+  preferences.putULong("d_timeout", config.displayTimeout);
+  preferences.putLong("lc_calibr", config.loadcellCalibration);
+  preferences.putULong("lc_weight", config.loadcellKnownWeight);
+  preferences.putULong("lc_interval", config.loadcellMeasurementIntervall);
+  preferences.putInt("lc_sampling", config.loadcellMeasurementSampling);
+  preferences.end();
 
   display.setScreenTimeOut(config.displayTimeout);
 
@@ -436,6 +456,7 @@ void setup()
   intializeConfiguration();
 
   display.init();
+  display.setScreenTimeOut(config.displayTimeout);
   displayData.title = DISPLAY_DATA_TITLE;
   displayData.unit = DISPLAY_DATA_UNIT;
 
