@@ -48,6 +48,7 @@ struct Configuration
   unsigned long loadcellKnownWeight;
   unsigned long loadcellMeasurementIntervall;
   uint8_t loadcellMeasurementSampling;
+  unsigned long rfidDecay;
 };
 Configuration config;
 
@@ -131,6 +132,16 @@ void mqttCb(char *topic, byte *payload, unsigned int length)
         if (display.containsKey("display_timeout"))
         {
           config.displayTimeout = display["display_timeout"];
+        }
+      }
+
+      JsonObject rfidJson = doc["rfid"];
+      if (rfidJson != NULL)
+      {
+        unsigned long rfidDecay = rfidJson["decay"];
+        if (rfidDecay != 0)
+        {
+          config.rfidDecay = rfidDecay;
         }
       }
 
@@ -235,12 +246,7 @@ void intializeConfiguration()
   config.loadcellKnownWeight = preferences.getULong("lc_weight", LOADCELL_KNOWN_WEIGHT);
   config.loadcellMeasurementIntervall =  preferences.getULong("lc_interval", LOADCELL_MEASUREMENT_INTERVAL);
   config.loadcellMeasurementSampling = preferences.getInt("lc_sampling", LOADCELL_MEASUREMENT_SAMPLING);
-
-  if(preferences.isKey("d_timeout")) {
-    Serial.printf("display timeout: ");
-    Serial.print(config.displayTimeout);
-    Serial.println();
-  }
+  config.rfidDecay = preferences.getULong("rfid_decay", RFID_DECAY);
 
   preferences.end();
 }
@@ -415,7 +421,7 @@ void measure()
       StaticJsonDocument<256> doc;
       char buffer[256];
       doc["device_id"] = MQTT_CLIENTID;
-      if(rTag.spoolId != NULL && millis() - lastTagRead < RFID_DECAY) {        
+      if(rTag.spoolId != NULL && millis() - lastTagRead < config.rfidDecay) {        
         doc["spool_id"] = rTag.spoolId;
       } 
       doc["value"] = measurement.result;
