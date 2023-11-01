@@ -22,6 +22,9 @@
 }
 ```
 
+*note: the spool_id is optional. the configuration option `rfid_decay` controls the duration until a spool is "forgotten"*
+
+
 ### Heartbeat
 
 `BASETOPIC/heartbeat/clientid`
@@ -60,6 +63,9 @@
     },
     "display": {
         "display_timeout": 60000
+    },
+    "rfid": {
+        "decay": 15000
     }
 }
 ```
