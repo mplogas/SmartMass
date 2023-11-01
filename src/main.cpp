@@ -64,6 +64,7 @@ Scale::Measurement measurement;
 RFID rfid(RFID_SS_PIN, RFID_RST_PIN);
 TagData wTag; // tag data to be written to the RFID reader
 TagData rTag; // tag data read from the RFID reader
+unsigned long lastTagRead = 0;
 
 /**
  * Callback function for MQTT messages. Parses the message payload as a JSON object and performs actions based on the "action" key.
@@ -193,6 +194,8 @@ void mqttCb(char *topic, byte *payload, unsigned int length)
 void rfidCb(TagData &data)
 {
     rTag = data;
+    lastTagRead = millis();
+
     Serial.println("CB Tagdata");
     Serial.printf("SpoolId ");
     Serial.print(rTag.spoolId);
@@ -216,9 +219,10 @@ void rfidCb(TagData &data)
     Serial.print(rTag.timestamp);
     Serial.println();
 }
-const String fullTopic = String(MQTT_TOPIC + MQTT_TOPIC_SEPARATOR + MQTT_CLIENTID);
-MqttClient mqttClient(WIFI_SSID, WIFI_PASSWORD, MQTT_BROKER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD, MQTT_CLIENTID, fullTopic.c_str(), mqttCb);
 
+MqttClient mqttClient(WIFI_SSID, WIFI_PASSWORD, MQTT_BROKER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD, MQTT_CLIENTID, MQTT_TOPIC, mqttCb);
+
+char statusTopic[128], heartbeatTopic[128], commandTopic[128], responseTopic[128];
 
 /**
  * @brief Initializes the configuration struct with default values.
@@ -305,7 +309,7 @@ void calibrateDevice()
   doc[ACTION_KEY] = "calibrate";
   doc["result"] = result;
   serializeJson(doc, buffer);
-  mqttClient.publish(fullTopic.c_str(), buffer);
+  mqttClient.publish(commandTopic, buffer);
 
   delay(5000);
   setRunModeMeasure();
@@ -407,13 +411,16 @@ void measure()
 
       // TODO: contract JSON object
       // https://arduinojson.org/v6/how-to/use-arduinojson-with-pubsubclient/
-      StaticJsonDocument<32> doc;
-      char buffer[32];
-      doc["ts"] = measurement.ts;
+      StaticJsonDocument<256> doc;
+      char buffer[256];
+      doc["device_id"] = MQTT_CLIENTID;
+      if(rTag.spoolId != NULL && millis() - lastTagRead < 15000) {        
+        doc["spool_id"] = rTag.spoolId;
+      } 
       doc["value"] = measurement.result;
       serializeJson(doc, buffer);
 
-      mqttClient.publish(fullTopic.c_str(), buffer);
+      mqttClient.publish(statusTopic, buffer);
     }
   }
 }
@@ -455,6 +462,11 @@ void setup()
 
   intializeConfiguration();
 
+  MqttClient::buildTopic(MQTT_TOPIC, "status", MQTT_CLIENTID, statusTopic);
+  MqttClient::buildTopic(MQTT_TOPIC, "heartbeat", MQTT_CLIENTID, heartbeatTopic);
+  MqttClient::buildTopic(MQTT_TOPIC, "command", MQTT_CLIENTID, commandTopic);
+  MqttClient::buildTopic(MQTT_TOPIC, "response", MQTT_CLIENTID, responseTopic);
+
   display.init();
   display.setScreenTimeOut(config.displayTimeout);
   displayData.title = DISPLAY_DATA_TITLE;
@@ -464,7 +476,7 @@ void setup()
   measurement.ts = millis();
 
   mqttClient.init();
-  mqttClient.subscribe(fullTopic.c_str());
+  mqttClient.subscribe(commandTopic);
 
   rfid.init(rfidCb);
 }

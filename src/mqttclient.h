@@ -25,7 +25,6 @@ typedef void (*mqttCallback)(char *topic, byte *payload, unsigned int length);
 /**
  * @brief Separator for MQTT topics.
  */
-static const String MQTT_TOPIC_SEPARATOR = "/";
 
 /**
  * @brief Class for handling MQTT client connections.
@@ -42,10 +41,10 @@ private:
     const char *mqttUser;
     const char *mqttPassword;
     const char *mqttClientId;
-    const char *mqttHeartbeatTopic;
+    char mqttHeartbeatTopic[128];
     const char *heartbeatPayload = "{ \"action\": \"heartbeat\", \"status\": \"ok\" }";
-    unsigned long lastHeartbeat = 0;    
-    const unsigned long heartbeatInterval = 60000; //milliseconds
+    unsigned long lastHeartbeat = 0;
+    const unsigned long heartbeatInterval = 60000; // milliseconds
     mqttCallback callback;
 
     /**
@@ -103,12 +102,7 @@ public:
      * @param mqttHeartbeatTopic Base topic for MQTT heartbeat messages.
      * @param callback Callback function for MQTT messages.
      */
-    MqttClient(const char *wifiSsid, const char *wifiPassword, const char *mqttBroker, int mqttPort, const char *mqttUser, const char *mqttPassword, const char *mqttClientId, const char *mqttHeartbeatTopic, mqttCallback callback);
-
-    /**
-     * @brief Destructor for MqttClient class.
-     */
-    ~MqttClient();
+    MqttClient(const char *wifiSsid, const char *wifiPassword, const char *mqttBroker, int mqttPort, const char *mqttUser, const char *mqttPassword, const char *mqttClientId, const char *mqttBaseTopic, mqttCallback callback);
 
     /**
      * @brief Initializes WiFi and MQTT connections.
@@ -132,6 +126,16 @@ public:
      * @param topic Topic to subscribe to.
      */
     void subscribe(const char *topic);
+
+    /**
+     * @brief static helper that builds correct topics for MQTT messages.
+     * @param base Base topic (can be empty)
+     * @param action Action subtopic
+     * @param clientid Client ID subtopic
+     * @param buffer Buffer to write the result to
+     */
+    static void buildTopic(const char *base, const char *action, const char *clientid, char *buffer);
+
 };
 
 #endif

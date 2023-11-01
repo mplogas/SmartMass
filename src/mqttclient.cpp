@@ -1,6 +1,6 @@
 #include "mqttclient.h"
 
-MqttClient::MqttClient(const char *wifi_ssid, const char *wifi_password, const char *mqtt_broker, int mqtt_port, const char *mqtt_user, const char *mqtt_password, const char *mqtt_clientid, const char *mqtt_heartbeattopic, mqttCallback mqtt_callback)
+MqttClient::MqttClient(const char *wifi_ssid, const char *wifi_password, const char *mqtt_broker, int mqtt_port, const char *mqtt_user, const char *mqtt_password, const char *mqtt_clientid, const char *mqtt_basetopic, mqttCallback mqtt_callback)
 {
     wifiSsid = wifi_ssid;
     wifiPassword = wifi_password;
@@ -9,13 +9,11 @@ MqttClient::MqttClient(const char *wifi_ssid, const char *wifi_password, const c
     mqttUser = mqtt_user;
     mqttPassword = mqtt_password;
     mqttClientId = mqtt_clientid;
-    mqttHeartbeatTopic = mqtt_heartbeattopic;
-    callback = mqtt_callback;
+    callback = mqtt_callback;   
+    buildTopic(mqtt_basetopic, "heartbeat", mqtt_clientid, mqttHeartbeatTopic);
 
     mqtt = new PubSubClient(wifi);
 }
-
-MqttClient::~MqttClient() {}
 
 boolean MqttClient::wifiConnect()
 {
@@ -94,10 +92,9 @@ void MqttClient::emitHeartbeat()
         lastHeartbeat = now;       
         
         publish(mqttHeartbeatTopic, heartbeatPayload);
-        Serial.print(now);
-        Serial.printf(" - emitted hearbeat");
-        Serial.println();
-        //Serial.printf("Heartbeat sent to topic %s\n", mqttHeartbeatTopic);
+        // Serial.print(now);
+        // Serial.printf(" - emitted hearbeat");
+        // Serial.println();
     }
 }
 
@@ -149,5 +146,38 @@ void MqttClient::subscribe(const char *topic)
         Serial.printf(" - subscribed to topic ");
         Serial.print(topic);
         Serial.println();
+    }
+}
+
+void MqttClient::buildTopic(const char *base, const char *action, const char *clientid, char *buffer)
+{
+    int length = 0;
+    const char *mqttTopicSeparator = "/";
+    if (strlen(base) > 0)
+    {
+        length += strlen(base);
+        length += strlen(mqttTopicSeparator);
+    }
+    length += strlen(action);
+    length += strlen(mqttTopicSeparator);
+    length += strlen(clientid);
+    length += 1;
+
+    try
+    {
+        if (strlen(base) > 0)
+        {
+            strcpy(buffer, base);
+            strcat(buffer, mqttTopicSeparator);
+        }
+        strcat(buffer, action);
+        strcat(buffer, mqttTopicSeparator);
+        strcat(buffer, clientid);
+
+        Serial.printf("Built topic: %s\n", buffer);
+    }
+    catch(const std::exception& e)
+    {
+        Serial.printf("Failed to build topic: %s\n", e.what());
     }
 }
