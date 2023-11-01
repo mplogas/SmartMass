@@ -34,5 +34,6 @@ const uint8_t LOADCELL_MEASUREMENT_SAMPLING = 1;
 // RFID
 const uint8_t RFID_RST_PIN = 15;          
 const uint8_t RFID_SS_PIN = 5;
+const unsigned long RFID_DECAY = 15000; // 15 seconds
 
 #endif

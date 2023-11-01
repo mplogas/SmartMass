@@ -11,6 +11,7 @@ MqttClient::MqttClient(const char *wifi_ssid, const char *wifi_password, const c
     mqttClientId = mqtt_clientid;
     callback = mqtt_callback;   
     buildTopic(mqtt_basetopic, "heartbeat", mqtt_clientid, mqttHeartbeatTopic);
+    sprintf(heartbeatPayload, "{\"device_id\":\"%s\",\"action\":\"heartbeat\",\"status\":\"ok\"}", mqtt_clientid);
 
     mqtt = new PubSubClient(wifi);
 }

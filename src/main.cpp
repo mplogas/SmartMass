@@ -304,12 +304,13 @@ void calibrateDevice()
   // TODO: writing calibration data immediately? yes/no?
   // config.loadcellCalibration = result;
 
-  StaticJsonDocument<96> doc;
-  char buffer[96];
+  StaticJsonDocument<256> doc;
+  char buffer[256];
+  doc["device_id"] = MQTT_CLIENTID;
   doc[ACTION_KEY] = "calibrate";
   doc["result"] = result;
   serializeJson(doc, buffer);
-  mqttClient.publish(commandTopic, buffer);
+  mqttClient.publish(responseTopic, buffer);
 
   delay(5000);
   setRunModeMeasure();
@@ -414,7 +415,7 @@ void measure()
       StaticJsonDocument<256> doc;
       char buffer[256];
       doc["device_id"] = MQTT_CLIENTID;
-      if(rTag.spoolId != NULL && millis() - lastTagRead < 15000) {        
+      if(rTag.spoolId != NULL && millis() - lastTagRead < RFID_DECAY) {        
         doc["spool_id"] = rTag.spoolId;
       } 
       doc["value"] = measurement.result;

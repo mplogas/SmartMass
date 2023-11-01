@@ -42,7 +42,7 @@ private:
     const char *mqttPassword;
     const char *mqttClientId;
     char mqttHeartbeatTopic[128];
-    const char *heartbeatPayload = "{ \"action\": \"heartbeat\", \"status\": \"ok\" }";
+    char heartbeatPayload[128];
     unsigned long lastHeartbeat = 0;
     const unsigned long heartbeatInterval = 60000; // milliseconds
     mqttCallback callback;
