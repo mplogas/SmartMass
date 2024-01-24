@@ -88,15 +88,6 @@ private:
     MFRC522 *pMfrc522;                                                      // Pointer to the MFRC522 object.
     MFRC522::MIFARE_Key key;                                                // MIFARE key object.
     MFRC522::PICC_Command authKey = MFRC522::PICC_CMD_MF_AUTH_KEY_A;        // default key is A.
-    const byte spoolIdBlock = 1;
-    const byte spoolWeightBlock = 2;
-    const byte spoolManufacturerBlock = 4;
-    const byte spoolMaterialBlock = 5;
-    const byte spoolColorBlock = 6;
-    const byte spoolNameBlock1 = 8;
-    const byte spoolNameBlock2 = 9;
-    const byte spoolNameBlock3 = 10;
-    const byte spoolTimestampBlock = 12;
     bool IsWrite = false;             // Flag to indicate if the RFID tag is being written to.
     void prepareKey();                // Helper function to prepare the default authentication key.
     void prepareKey(byte authKey[6]); // Helper function to prepare a custom authentication key.
@@ -107,6 +98,16 @@ private:
     bool openTag();  // Helper function to open the RFID tag for writing.
     void closeTag(); // Helper function to close the RFID tag after writing.
     bool authenticate(MFRC522::PICC_Command key, byte blockId); // Helper function to authenticate the RFID tag.
+    //RFID physical tag/block structure
+    const byte spoolIdBlock = 1;
+    const byte spoolWeightBlock = 2;
+    const byte spoolManufacturerBlock = 4;
+    const byte spoolMaterialBlock = 5;
+    const byte spoolColorBlock = 6;
+    const byte spoolNameBlock1 = 8;
+    const byte spoolNameBlock2 = 9;
+    const byte spoolNameBlock3 = 10;
+    const byte spoolTimestampBlock = 12;
 };
 
 #endif

@@ -76,7 +76,7 @@ unsigned long lastTagRead = 0;
 void mqttCb(char *topic, byte *payload, unsigned int length)
 {
   StaticJsonDocument<512> doc;
-  ArduinoJson::V6213PB2::DeserializationError serializationResult = deserializeJson(doc, payload, length);
+  DeserializationError serializationResult = deserializeJson(doc, payload, length);
   if (serializationResult)
   {
     Serial.println("serialization failed.");
